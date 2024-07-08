@@ -1,10 +1,10 @@
-import { createServer } from 'http';
-import next from 'next';
-import { Server } from 'socket.io';
-import data from './src/data.json' assert { type: 'json' };
+import { createServer } from "http";
+import next from "next";
+import { Server } from "socket.io";
+import data from "./src/data.json" assert { type: "json" };
 
-const dev = process.env.NODE_ENV !== 'production';
-const hostname = 'localhost';
+const dev = process.env.NODE_ENV !== "production";
+const hostname = "localhost";
 const port = 3000;
 
 const app = next({ dev });
@@ -24,13 +24,13 @@ app.prepare().then(() => {
 
   io = new Server(httpServer, {
     cors: {
-      origin: '*',
+      origin: "*",
     },
   });
 
-  io.on('connection', (socket) => {
+  io.on("connection", (socket) => {
     users++;
-    console.log('a user connected', users);
+    console.log("A user connected", users);
 
     // Assign player1 or player2 based on connection order
     if (users === 1) {
@@ -38,39 +38,53 @@ app.prepare().then(() => {
     } else if (users === 2) {
       players.player2 = socket.id;
       quizStarted = true;
-      questions = [...data.questions].sort(() => 0.5 - Math.random()).slice(0, 5);
-      io.emit('players', players); // Send players data to clients
-      io.emit('startQuiz', questions);
+      questions = [...data.questions]
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 5);
+      io.emit("players", players); // Send players data to clients
+      io.emit("startQuiz", questions);
+      console.log("Quiz started with questions:", questions);
     }
 
-    socket.on('updateScore', (score) => {
-      let player = Object.keys(players).find(key => players[key] === socket.id);
+    socket.on("updateScore", (score) => {
+      let player = Object.keys(players).find(
+        (key) => players[key] === socket.id
+      );
       if (player) {
         scores[player] = score;
-        io.emit('scoreUpdate', scores);
+        io.emit("scoreUpdate", scores);
+        console.log("Score update:", scores);
 
         // Check if any player has reached a score of 50 (or any winning condition)
         if (scores[player] >= 50) {
-          io.emit('gameOver', `${player} wins!`);
+          io.emit("gameOver", `${player} wins!`);
           resetGame();
         }
       }
     });
 
-    socket.on('requestOpponentScore', () => {
-      let currentPlayer = Object.keys(players).find(key => players[key] === socket.id);
-      let opponentPlayer = currentPlayer === 'player1' ? 'player2' : 'player1';
-      io.to(socket.id).emit('opponentScore', scores[opponentPlayer]);
+    socket.on("requestOpponentScore", () => {
+      let currentPlayer = Object.keys(players).find(
+        (key) => players[key] === socket.id
+      );
+      let opponentPlayer = currentPlayer === "player1" ? "player2" : "player1";
+      io.to(socket.id).emit("opponentScore", scores[opponentPlayer] || 0);
+      console.log(
+        "Opponent score requested by",
+        currentPlayer,
+        "Opponent score:",
+        scores[opponentPlayer] || 0
+      );
     });
 
-    socket.on('disconnect', () => {
+    socket.on("disconnect", () => {
       users--;
       if (users < 2) {
         quizStarted = false;
-        io.emit('resetQuiz');
+        io.emit("resetQuiz");
         resetGame();
       }
-      console.log('user disconnected', users);
+      console.log("A user disconnected", users);
     });
   });
 
@@ -84,5 +98,6 @@ function resetGame() {
   quizStarted = false;
   questions = [];
   players = {};
-  io.emit('resetQuiz');
+  io.emit("resetQuiz");
+  console.log("Game reset. Scores:", scores);
 }

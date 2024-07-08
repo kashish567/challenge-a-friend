@@ -1,8 +1,8 @@
-'use client'
-import React, { useState, useEffect } from 'react';
-import { io, Socket } from 'socket.io-client';
-import CustomButton from '@/components/CustomButton';
-import { PiCoins } from 'react-icons/pi';
+"use client";
+import React, { useState, useEffect } from "react";
+import { io, Socket } from "socket.io-client";
+import CustomButton from "@/components/CustomButton";
+import { PiCoins } from "react-icons/pi";
 
 let socket: Socket;
 
@@ -26,29 +26,38 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   const [opponentScore, setOpponentScore] = useState<number>(0);
   const [timer, setTimer] = useState<number>(15);
   const [showResult, setShowResult] = useState<boolean>(false);
-  const [questionStatus, setQuestionStatus] = useState<(string | null)[]>(Array(5).fill(null));
+  const [questionStatus, setQuestionStatus] = useState<(string | null)[]>(
+    Array(5).fill(null)
+  );
   const [quizStarted, setQuizStarted] = useState<boolean>(false);
   const [gameOver, setGameOver] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [players, setPlayers] = useState<{ [key: string]: string }>({});
-  const [scores, setScores] = useState<{ [key: string]: number }>({});
+  // const [scores, setScores] = useState<{ [key: string]: number }>({});
+  const [scores, setScores] = useState<any>();
 
   useEffect(() => {
-    socket = io('http://localhost:3000');
+    socket = io("http://localhost:3000");
 
-    socket.on('connect', () => {
+    socket.on("connect", () => {
       const id = socket.id;
       if (id) {
         setPlayerId(id);
+        socket.emit("requestOpponentScore"); // Request the opponent's score
       }
     });
 
-    socket.on('startQuiz', handleStartQuiz);
-    socket.on('resetQuiz', handleResetQuiz);
-    socket.on('scoreUpdate', handleScoreUpdate);
-    socket.on('gameOver', handleGameOver);
-    socket.on('players', handlePlayers);
-    socket.on('quizEnd', handleQuizEnd); // Event to handle both users finishing the quiz
+    socket.on("startQuiz", handleStartQuiz);
+    socket.on("resetQuiz", handleResetQuiz);
+    socket.on("scoreUpdate", handleScoreUpdate);
+    socket.on("gameOver", handleGameOver);
+    socket.on("players", handlePlayers);
+    socket.on("quizEnd", handleQuizEnd);
+
+    socket.on("opponentScore", (opponentScore) => {
+      setOpponentScore(opponentScore);
+      console.log("Opponent score received:", opponentScore);
+    });
 
     return () => {
       socket.disconnect();
@@ -89,19 +98,27 @@ const Home: React.FC<HomeProps> = ({ params }) => {
     setScores({}); // Reset scores
   };
 
+  console.log("=====SCore", scores);
+
   const handleScoreUpdate = (scoresData: { [key: string]: number }) => {
     setScores(scoresData);
+    console.log("Score update received:", scoresData);
     if (playerId) {
       const playerScore = scoresData[playerId] || 0;
-      const opponentScore = Object.values(scoresData).reduce((acc, score) => acc + score, 0) - playerScore;
+      const opponentPlayerId = Object.keys(scoresData).find(
+        (id) => id !== playerId
+      );
+      const opponentPlayerScore = opponentPlayerId
+        ? scoresData[opponentPlayerId] || 0
+        : 0;
       setScore(playerScore);
-      setOpponentScore(opponentScore);
+      setOpponentScore(opponentPlayerScore);
     }
   };
 
   const handleGameOver = (message: string) => {
     setGameOver(message);
-    socket.emit('quizEnd'); // Notify server that this client has finished the quiz
+    socket.emit("quizEnd"); // Notify server that this client has finished the quiz
   };
 
   const handleQuizEnd = () => {
@@ -116,16 +133,16 @@ const Home: React.FC<HomeProps> = ({ params }) => {
     if (correct) {
       const newScore = score + 10;
       setScore(newScore);
-      socket.emit('updateScore', newScore);
-      updateQuestionStatus('correct');
+      socket.emit("updateScore", newScore);
+      updateQuestionStatus("correct");
     } else {
-      updateQuestionStatus('wrong');
+      updateQuestionStatus("wrong");
     }
     setTimeout(goToNextQuestion, 1000);
   };
 
   const handleTimeUp = () => {
-    updateQuestionStatus('unanswered');
+    updateQuestionStatus("unanswered");
     setTimeout(goToNextQuestion, 1000);
   };
 
@@ -142,7 +159,7 @@ const Home: React.FC<HomeProps> = ({ params }) => {
       setTimer(15);
     } else {
       setShowResult(true);
-      socket.emit('quizEnd'); // Notify server that this client has finished the quiz
+      socket.emit("quizEnd"); // Notify server that this client has finished the quiz
     }
   };
 
@@ -162,20 +179,22 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   }
 
   if (showResult) {
-    const winner = score > opponentScore ? 'You' : 'Opponent';
+    const winner = score > opponentScore ? "You" : "Opponent";
     return (
       <main className="bg-[#dbd9e3] flex min-h-screen flex-col items-center justify-center p-24">
         <div className="bg-[#f0bf4c] rounded-lg shadow-md p-8 text-center">
           <h1 className="text-2xl font-bold">Quiz Completed!!</h1>
           <p className="text-lg">
             Your score: {score} ed coins
-            <PiCoins className="inline-block ml-2" />{' '}
+            <PiCoins className="inline-block ml-2" />
           </p>
           <p className="text-lg">
-            {winner}'s score: {opponentScore} ed coins
-            <PiCoins className="inline-block ml-2" />{' '}
+            {winner}'s score: {scores && scores.player2} ed coins
+            <PiCoins className="inline-block ml-2" />
           </p>
-          <p className="text-lg">{score > opponentScore ? 'You win!' : 'You lose!'}</p>
+          <p className="text-lg">
+            {score > opponentScore ? "You win!" : "You lose!"}
+          </p>
         </div>
       </main>
     );
@@ -197,7 +216,9 @@ const Home: React.FC<HomeProps> = ({ params }) => {
               <div
                 key={index}
                 className={`w-10 h-10 flex items-center justify-center rounded-full border-2 border-black mx-2 ${
-                  index === currentQuestionIndex ? 'bg-yellow-500' : 'bg-gray-300'
+                  index === currentQuestionIndex
+                    ? "bg-yellow-500"
+                    : "bg-gray-300"
                 }`}
               >
                 {index + 1}
@@ -212,15 +233,26 @@ const Home: React.FC<HomeProps> = ({ params }) => {
           </div>
           <div className="grid grid-cols-2 gap-4 w-full mb-4">
             {question.options.map((option, index) => (
-              <CustomButton key={index} text={option} onClick={() => handleAnswerClick(option)} />
+              <CustomButton
+                key={index}
+                text={option}
+                onClick={() => handleAnswerClick(option)}
+              />
             ))}
           </div>
           <div className="flex text-lg font-medium w-full items-center justify-center mt-3 mb-10">
-            ---------------------- <PiCoins className="inline-block mr-2 ml-2" /> 10 ed coins ----------------------
+            ---------------------- <PiCoins className="inline-block mx-2" />
+            ----------------------
           </div>
-          <div className="flex justify-between w-full text-lg font-medium mt-3 mb-10">
-            <div>Your score: {score} ed coins</div>
-            <div>Opponent's score: {opponentScore} ed coins</div>
+          <div className="flex w-full justify-between mt-4">
+            <div className="w-1/2 text-left">
+              You: {score} ed coins
+              <PiCoins className="inline-block ml-2" />
+            </div>
+            <div className="w-1/2 text-right">
+              Opponent: {scores && scores.player2} ed coins
+              <PiCoins className="inline-block ml-2" />
+            </div>
           </div>
         </div>
       </div>
