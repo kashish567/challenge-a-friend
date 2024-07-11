@@ -34,7 +34,7 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [players, setPlayers] = useState<{ [key: string]: string }>({});
   const [scores, setScores] = useState<{ [key: string]: number }>();
-  const [waitingForOpponent, setWaitingForOpponent] = useState<boolean>(false); // New state
+  const [waitingForOpponent, setWaitingForOpponent] = useState<boolean>(false);
 
   useEffect(() => {
     socket = io("http://localhost:3000");
@@ -43,7 +43,7 @@ const Home: React.FC<HomeProps> = ({ params }) => {
       const id = socket.id;
       if (id) {
         setPlayerId(id);
-        socket.emit("requestOpponentScore"); // Request the opponent's score
+        socket.emit("requestOpponentScore");
       }
     });
 
@@ -53,11 +53,11 @@ const Home: React.FC<HomeProps> = ({ params }) => {
     socket.on("gameOver", handleGameOver);
     socket.on("players", handlePlayers);
     socket.on("quizEnd", handleQuizEnd);
-
     socket.on("opponentScore", (opponentScore) => {
       setOpponentScore(opponentScore);
       console.log("Opponent score received:", opponentScore);
     });
+    socket.on("showResults", handleShowResults); // Listen for showResults event
 
     return () => {
       socket.disconnect();
@@ -116,11 +116,10 @@ const Home: React.FC<HomeProps> = ({ params }) => {
 
   const handleGameOver = (message: string) => {
     setGameOver(message);
-    socket.emit("quizEnd"); // Notify server that this client has finished the quiz
+    socket.emit("quizEnd");
   };
 
   const handleQuizEnd = () => {
-    // Notify server that this client has finished the quiz
     socket.emit("quizEnd");
   };
 
@@ -131,11 +130,9 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   };
 
   useEffect(() => {
-    socket.on("showResults", handleShowResults);
-    socket.on("waitingForOpponent", () => setWaitingForOpponent(true)); // New event
+    socket.on("waitingForOpponent", () => setWaitingForOpponent(true));
 
     return () => {
-      socket.off("showResults", handleShowResults);
       socket.off("waitingForOpponent");
     };
   }, []);
@@ -171,7 +168,8 @@ const Home: React.FC<HomeProps> = ({ params }) => {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setTimer(15);
     } else {
-      handleQuizEnd(); // Notify server that this client has finished the quiz
+      // Notify server that this client has finished the quiz
+      handleQuizEnd();
     }
   };
 
@@ -183,7 +181,9 @@ const Home: React.FC<HomeProps> = ({ params }) => {
     return (
       <main className="bg-[#dbd9e3] flex min-h-screen flex-col items-center justify-center p-24">
         <div className="bg-[#f0bf4c] rounded-lg shadow-md p-8 text-center">
-          <h1 className="text-2xl font-bold">Waiting for opponent to finish...</h1>
+          <h1 className="text-2xl font-bold">
+            Waiting for opponent to finish...
+          </h1>
         </div>
       </main>
     );
