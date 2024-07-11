@@ -16,6 +16,7 @@ let quizStarted = false;
 let scores = { player1: 0, player2: 0 };
 let questions = [];
 let players = {}; // To store the socket ids of the players
+let finishedPlayers = {};
 
 app.prepare().then(() => {
   const httpServer = createServer((req, res) => {
@@ -77,6 +78,23 @@ app.prepare().then(() => {
       );
     });
 
+    socket.on("quizEnd", () => {
+      let player = Object.keys(players).find(
+        (key) => players[key] === socket.id
+      );
+      if (player) {
+        finishedPlayers[player] = true;
+        if (Object.keys(finishedPlayers).length === 2) {
+          // Both players have finished
+          io.emit("showResults", scores);
+          resetGame();
+        } else {
+          // Notify the player that they are waiting for the opponent to finish
+          io.to(socket.id).emit("waitingForOpponent");
+        }
+      }
+    });
+
     socket.on("disconnect", () => {
       users--;
       if (users < 2) {
@@ -98,6 +116,7 @@ function resetGame() {
   quizStarted = false;
   questions = [];
   players = {};
+  finishedPlayers = {};
   io.emit("resetQuiz");
   console.log("Game reset. Scores:", scores);
 }

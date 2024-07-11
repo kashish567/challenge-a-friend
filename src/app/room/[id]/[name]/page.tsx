@@ -33,8 +33,8 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   const [gameOver, setGameOver] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [players, setPlayers] = useState<{ [key: string]: string }>({});
-  // const [scores, setScores] = useState<{ [key: string]: number }>({});
-  const [scores, setScores] = useState<any>();
+  const [scores, setScores] = useState<{ [key: string]: number }>();
+  const [waitingForOpponent, setWaitingForOpponent] = useState<boolean>(false); // New state
 
   useEffect(() => {
     socket = io("http://localhost:3000");
@@ -95,10 +95,8 @@ const Home: React.FC<HomeProps> = ({ params }) => {
     setQuestionStatus(Array(5).fill(null));
     setGameOver(null);
     setOpponentScore(0);
-    setScores({}); // Reset scores
+    setScores({});
   };
-
-  console.log("=====SCore", scores);
 
   const handleScoreUpdate = (scoresData: { [key: string]: number }) => {
     setScores(scoresData);
@@ -122,10 +120,25 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   };
 
   const handleQuizEnd = () => {
-    // Calculate results and show them after both players have finished
+    // Notify server that this client has finished the quiz
+    socket.emit("quizEnd");
+  };
+
+  const handleShowResults = (finalScores: { [key: string]: number }) => {
+    setScores(finalScores);
     setShowResult(true);
     setQuizStarted(false);
   };
+
+  useEffect(() => {
+    socket.on("showResults", handleShowResults);
+    socket.on("waitingForOpponent", () => setWaitingForOpponent(true)); // New event
+
+    return () => {
+      socket.off("showResults", handleShowResults);
+      socket.off("waitingForOpponent");
+    };
+  }, []);
 
   const handleAnswerClick = (answer: string) => {
     setSelectedAnswer(answer);
@@ -153,18 +166,27 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   };
 
   const goToNextQuestion = () => {
-    if (currentQuestionIndex < 4) {
+    setSelectedAnswer(null);
+    if (currentQuestionIndex + 1 < questions.length) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setSelectedAnswer(null);
       setTimer(15);
     } else {
-      setShowResult(true);
-      socket.emit("quizEnd"); // Notify server that this client has finished the quiz
+      handleQuizEnd(); // Notify server that this client has finished the quiz
     }
   };
 
   if (!quizStarted) {
     return <div>Waiting for another player to join...</div>;
+  }
+
+  if (waitingForOpponent) {
+    return (
+      <main className="bg-[#dbd9e3] flex min-h-screen flex-col items-center justify-center p-24">
+        <div className="bg-[#f0bf4c] rounded-lg shadow-md p-8 text-center">
+          <h1 className="text-2xl font-bold">Waiting for opponent to finish...</h1>
+        </div>
+      </main>
+    );
   }
 
   if (gameOver) {
@@ -178,22 +200,22 @@ const Home: React.FC<HomeProps> = ({ params }) => {
     );
   }
 
-  if (showResult) {
-    const winner = score > opponentScore ? "You" : "Opponent";
+  if (showResult && scores) {
+    const winner = scores.player1 > scores.player2 ? "You" : "Opponent";
     return (
       <main className="bg-[#dbd9e3] flex min-h-screen flex-col items-center justify-center p-24">
         <div className="bg-[#f0bf4c] rounded-lg shadow-md p-8 text-center">
           <h1 className="text-2xl font-bold">Quiz Completed!!</h1>
           <p className="text-lg">
-            Your score: {score} ed coins
+            Your score: {scores.player1} ed coins
             <PiCoins className="inline-block ml-2" />
           </p>
           <p className="text-lg">
-            {winner}'s score: {scores && scores.player2} ed coins
+            {winner}'s score: {scores.player2} ed coins
             <PiCoins className="inline-block ml-2" />
           </p>
           <p className="text-lg">
-            {score > opponentScore ? "You win!" : "You lose!"}
+            {scores.player1 > scores.player2 ? "You win!" : "You lose!"}
           </p>
         </div>
       </main>
@@ -246,11 +268,11 @@ const Home: React.FC<HomeProps> = ({ params }) => {
           </div>
           <div className="flex w-full justify-between mt-4">
             <div className="w-1/2 text-left">
-              You: {score} ed coins
+              Player1: {scores && scores.player1} ed coins
               <PiCoins className="inline-block ml-2" />
             </div>
             <div className="w-1/2 text-right">
-              Opponent: {scores && scores.player2} ed coins
+              Player2: {scores && scores.player2} ed coins
               <PiCoins className="inline-block ml-2" />
             </div>
           </div>
