@@ -43,7 +43,7 @@ app.prepare().then(() => {
         .slice(0, 5);
       io.emit("players", players);
       io.emit("startQuiz", questions);
-      console.log("Quiz started with questions:", questions);
+      //console.log("Quiz started with questions:", questions);
     }
 
     socket.on("updateScore", (score) => {
@@ -54,9 +54,14 @@ app.prepare().then(() => {
         scores[player] = score;
         io.emit("scoreUpdate", scores);
 
-        if (scores[player] >= 50) {
-          io.emit("gameOver", `${player} wins!`);
-        }
+        // Print players' scores to the console
+        console.log(
+          `Scores updated: Player 1 - ${scores.player1}, Player 2 - ${scores.player2}`
+        );
+
+        // if (scores[player] >= 50) {
+        //   io.emit("gameOver", `${player} wins!`);
+        // }
       }
     });
 
@@ -76,7 +81,7 @@ app.prepare().then(() => {
         finishedPlayers[player] = true;
         console.log("=====", finishedPlayers);
         if (finishedPlayers.player1 && finishedPlayers.player2) {
-          console.log("GAME finesheds")
+          console.log("GAME finished");
           io.emit("showResults", scores);
         } else {
           io.to(socket.id).emit("waitingForOpponent");

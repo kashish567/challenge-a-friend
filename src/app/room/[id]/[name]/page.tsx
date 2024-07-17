@@ -57,7 +57,10 @@ const Home: React.FC<HomeProps> = ({ params }) => {
       setOpponentScore(opponentScore);
       console.log("Opponent score received:", opponentScore);
     });
-    socket.on("showResults", handleShowResults); // Listen for showResults event
+    socket.on("showResults", (finalScores) => {
+      console.log("showResults event received", finalScores);
+      handleShowResults(finalScores);
+    }); // Listen for showResults event
 
     return () => {
       socket.disconnect();
@@ -79,12 +82,14 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   };
 
   const handleStartQuiz = (questions: Question[]) => {
+    //console.log("handleStartQuiz");
     setQuizStarted(true);
     setQuestions(questions);
     setTimer(15);
   };
 
   const handleResetQuiz = () => {
+    //console.log("handleResetQuiz");
     setQuizStarted(false);
     setQuestions([]);
     setCurrentQuestionIndex(0);
@@ -99,6 +104,7 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   };
 
   const handleScoreUpdate = (scoresData: { [key: string]: number }) => {
+    //console.log("handleScoreUpdate");
     setScores(scoresData);
     console.log("Score update received:", scoresData);
     if (playerId) {
@@ -115,18 +121,22 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   };
 
   const handleGameOver = (message: string) => {
+    //console.log("handleGameOver");
     setGameOver(message);
     socket.emit("quizEnd");
   };
 
   const handleQuizEnd = () => {
+    //console.log("handleQuizEnd");
     socket.emit("quizEnd");
   };
 
   const handleShowResults = (finalScores: { [key: string]: number }) => {
+    //console.log("handleShowResults");
     setScores(finalScores);
     setShowResult(true);
-    setQuizStarted(false);
+    setWaitingForOpponent(false);
+    //setQuizStarted(false);
   };
 
   useEffect(() => {
@@ -138,6 +148,7 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   }, []);
 
   const handleAnswerClick = (answer: string) => {
+    //console.log("handleAnswerClick");
     setSelectedAnswer(answer);
     const correct = answer === questions[currentQuestionIndex].correctAnswer;
     if (correct) {
@@ -152,17 +163,20 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   };
 
   const handleTimeUp = () => {
+    //console.log("handleTimeUp");
     updateQuestionStatus("unanswered");
     setTimeout(goToNextQuestion, 1000);
   };
 
   const updateQuestionStatus = (status: string) => {
+    //console.log("updateQuestionStatus");
     const updatedStatus = [...questionStatus];
     updatedStatus[currentQuestionIndex] = status;
     setQuestionStatus(updatedStatus);
   };
 
   const goToNextQuestion = () => {
+    //console.log("goToNextQuestion");
     setSelectedAnswer(null);
     if (currentQuestionIndex + 1 < questions.length) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
@@ -173,14 +187,16 @@ const Home: React.FC<HomeProps> = ({ params }) => {
     }
   };
 
+  //console.log({ quizStarted });
   if (!quizStarted) {
     return <div>Waiting for another player to join...</div>;
   }
 
+  //console.log({ waitingForOpponent });
   if (waitingForOpponent) {
     return (
       <main className="bg-[#dbd9e3] flex min-h-screen flex-col items-center justify-center p-24">
-        <div className="bg-[#f0bf4c] rounded-lg shadow-md p-8 text-center">
+        <div className="bg-[#f0bf4c] rounded-sm shadow-md p-6 px-16 text-center">
           <h1 className="text-2xl font-bold">
             Waiting for opponent to finish...
           </h1>
@@ -189,6 +205,7 @@ const Home: React.FC<HomeProps> = ({ params }) => {
     );
   }
 
+  //console.log({ gameOver });
   if (gameOver) {
     return (
       <main className="bg-[#dbd9e3] flex min-h-screen flex-col items-center justify-center p-24">
@@ -200,23 +217,30 @@ const Home: React.FC<HomeProps> = ({ params }) => {
     );
   }
 
+  //console.log({ showResult });
   if (showResult && scores) {
-    const winner = scores.player1 > scores.player2 ? "You" : "Opponent";
+    let winnerMessage;
+
+    if (scores.player1 > scores.player2) {
+      winnerMessage = "Player 1 Wins!";
+    } else if (scores.player2 > scores.player1) {
+      winnerMessage = "Player 2 Wins!";
+    } else {
+      winnerMessage = "It's a Tie!";
+    }
     return (
       <main className="bg-[#dbd9e3] flex min-h-screen flex-col items-center justify-center p-24">
         <div className="bg-[#f0bf4c] rounded-lg shadow-md p-8 text-center">
-          <h1 className="text-2xl font-bold">Quiz Completed!!</h1>
+          <h1 className="text-2xl font-bold mb-2">Quiz Completed!!</h1>
           <p className="text-lg">
-            Your score: {scores.player1} ed coins
+            Player 1 score: {scores.player1} ed coins
             <PiCoins className="inline-block ml-2" />
           </p>
           <p className="text-lg">
-            {winner}'s score: {scores.player2} ed coins
+            Player 2 score: {scores.player2} ed coins
             <PiCoins className="inline-block ml-2" />
           </p>
-          <p className="text-lg">
-            {scores.player1 > scores.player2 ? "You win!" : "You lose!"}
-          </p>
+          <p className="text-lg font-bold">{winnerMessage}</p>
         </div>
       </main>
     );
@@ -228,8 +252,19 @@ const Home: React.FC<HomeProps> = ({ params }) => {
 
   const question = questions[currentQuestionIndex];
 
+  const playerMessage =
+    playerId === players.player1
+      ? "You are Player 1"
+      : playerId === players.player2
+      ? "You are Player 2"
+      : "";
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24 bg-white">
+      <div className="w-full max-w-md text-center">
+        <h1 className="text-3xl font-bold mb-2">Quiz Time!</h1>
+        <p className="text-lg font-bold">{playerMessage}</p>
+      </div>
       <div className="relative w-full max-w-[40rem]">
         <div className="bg-[#f0bf4c] rounded-3xl border-2 border-gray-600 w-full h-full absolute top-0 left-0 transform rotate-6"></div>
         <div className="bg-[#dbd9e3] rounded-3xl border-2 flex flex-col items-center justify-center border-black p-8 w-full relative z-10">
@@ -240,7 +275,7 @@ const Home: React.FC<HomeProps> = ({ params }) => {
                 className={`w-10 h-10 flex items-center justify-center rounded-full border-2 border-black mx-2 ${
                   index === currentQuestionIndex
                     ? "bg-yellow-500"
-                    : "bg-gray-300"
+                    : "bg-gray-100"
                 }`}
               >
                 {index + 1}
@@ -263,16 +298,16 @@ const Home: React.FC<HomeProps> = ({ params }) => {
             ))}
           </div>
           <div className="flex text-lg font-medium w-full items-center justify-center mt-3 mb-10">
-            ---------------------- <PiCoins className="inline-block mx-2" />
-            ----------------------
+            ---------------------- <PiCoins className="inline-block mx-2" /> 10
+            ed coins ----------------------
           </div>
           <div className="flex w-full justify-between mt-4">
             <div className="w-1/2 text-left">
-              Player1: {scores && scores.player1} ed coins
+              Player 1 : {scores && scores.player1} ed coins
               <PiCoins className="inline-block ml-2" />
             </div>
             <div className="w-1/2 text-right">
-              Player2: {scores && scores.player2} ed coins
+              Player 2 : {scores && scores.player2} ed coins
               <PiCoins className="inline-block ml-2" />
             </div>
           </div>
