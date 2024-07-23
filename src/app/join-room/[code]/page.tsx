@@ -1,16 +1,18 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Socket, io } from "socket.io-client";
+import Link from "next/link";
+import React from "react";
 import { useRouter } from "next/navigation";
+import { Socket, io } from "socket.io-client";
 
 let socket: Socket;
 
 interface Params {
-  id: string;
+  code: string;
 }
 
-const Room = ({ params }: { params: Params }) => {
+const JoinRoom = ({ params }: { params: Params }) => {
   const [username, setUsername] = useState("");
 
   const history = useRouter();
@@ -24,8 +26,8 @@ const Room = ({ params }: { params: Params }) => {
   }, []);
 
   const onJoinRoomClick = (e: any) => {
-    socket.emit("joinRoom", params.id, username);
-    history.push(`/room/${params.id}/${username}`);
+    socket.emit("joinRoom", params.code, username);
+    history.push(`/room/${params.code}/${username}`);
   };
 
   return (
@@ -51,4 +53,4 @@ const Room = ({ params }: { params: Params }) => {
   );
 };
 
-export default Room;
+export default JoinRoom;

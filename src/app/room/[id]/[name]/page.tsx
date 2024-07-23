@@ -15,6 +15,7 @@ interface Question {
 interface HomeProps {
   params: {
     name: string;
+    id: string;
   };
 }
 
@@ -32,12 +33,14 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   const [quizStarted, setQuizStarted] = useState<boolean>(false);
   const [gameOver, setGameOver] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState<string | null>(null);
-  const [players, setPlayers] = useState<{ [key: string]: string }>({});
+  // const [players, setPlayers] = useState<{ [key: string]: string }>({});
   const [scores, setScores] = useState<{ [key: string]: number }>();
   const [waitingForOpponent, setWaitingForOpponent] = useState<boolean>(false);
 
   useEffect(() => {
     socket = io("http://localhost:3000");
+
+    socket.emit("userJoinedQuizRoom", params.id, params.name);
 
     socket.on("connect", () => {
       const id = socket.id;
@@ -47,20 +50,34 @@ const Home: React.FC<HomeProps> = ({ params }) => {
       }
     });
 
-    socket.on("startQuiz", handleStartQuiz);
+    socket.on("roomState", (roomState) => {
+      // Check if both players are in the room and waiting for opponent
+      console.log("count", roomState.playerCount);
+      if (roomState.playerCount < 2) {
+        setWaitingForOpponent(true);
+      } else {
+        setWaitingForOpponent(false);
+      }
+    });
+
+    socket.on("startQuiz", (questions) => {
+      console.log("Start Quiz event received with questions:", questions);
+      handleStartQuiz(questions);
+    });
+
     socket.on("resetQuiz", handleResetQuiz);
     socket.on("scoreUpdate", handleScoreUpdate);
     socket.on("gameOver", handleGameOver);
-    socket.on("players", handlePlayers);
     socket.on("quizEnd", handleQuizEnd);
-    socket.on("opponentScore", (opponentScore) => {
-      setOpponentScore(opponentScore);
-      console.log("Opponent score received:", opponentScore);
-    });
     socket.on("showResults", (finalScores) => {
       console.log("showResults event received", finalScores);
       handleShowResults(finalScores);
-    }); // Listen for showResults event
+    });
+
+    socket.on("quiz-started", (data) => {
+      console.log(data); // Log received data
+      setQuizStarted(data.quizStarted);
+    });
 
     return () => {
       socket.disconnect();
@@ -77,19 +94,15 @@ const Home: React.FC<HomeProps> = ({ params }) => {
     return () => clearTimeout(timerId);
   }, [timer, quizStarted]);
 
-  const handlePlayers = (playersData: { [key: string]: string }) => {
-    setPlayers(playersData);
-  };
-
   const handleStartQuiz = (questions: Question[]) => {
-    //console.log("handleStartQuiz");
+    console.log("handleStartQuiz");
     setQuizStarted(true);
     setQuestions(questions);
     setTimer(15);
   };
 
   const handleResetQuiz = () => {
-    //console.log("handleResetQuiz");
+    console.log("handleResetQuiz");
     setQuizStarted(false);
     setQuestions([]);
     setCurrentQuestionIndex(0);
@@ -104,9 +117,8 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   };
 
   const handleScoreUpdate = (scoresData: { [key: string]: number }) => {
-    //console.log("handleScoreUpdate");
+    console.log("handleScoreUpdate");
     setScores(scoresData);
-    console.log("Score update received:", scoresData);
     if (playerId) {
       const playerScore = scoresData[playerId] || 0;
       const opponentPlayerId = Object.keys(scoresData).find(
@@ -121,34 +133,32 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   };
 
   const handleGameOver = (message: string) => {
-    //console.log("handleGameOver");
+    console.log("handleGameOver");
     setGameOver(message);
     socket.emit("quizEnd");
   };
 
   const handleQuizEnd = () => {
-    //console.log("handleQuizEnd");
+    console.log("handleQuizEnd");
     socket.emit("quizEnd");
   };
 
   const handleShowResults = (finalScores: { [key: string]: number }) => {
-    //console.log("handleShowResults");
+    console.log("handleShowResults");
     setScores(finalScores);
     setShowResult(true);
     setWaitingForOpponent(false);
-    //setQuizStarted(false);
   };
 
   useEffect(() => {
     socket.on("waitingForOpponent", () => setWaitingForOpponent(true));
-
     return () => {
       socket.off("waitingForOpponent");
     };
   }, []);
 
   const handleAnswerClick = (answer: string) => {
-    //console.log("handleAnswerClick");
+    console.log("handleAnswerClick");
     setSelectedAnswer(answer);
     const correct = answer === questions[currentQuestionIndex].correctAnswer;
     if (correct) {
@@ -163,36 +173,35 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   };
 
   const handleTimeUp = () => {
-    //console.log("handleTimeUp");
+    console.log("handleTimeUp");
     updateQuestionStatus("unanswered");
     setTimeout(goToNextQuestion, 1000);
   };
 
   const updateQuestionStatus = (status: string) => {
-    //console.log("updateQuestionStatus");
+    console.log("updateQuestionStatus");
     const updatedStatus = [...questionStatus];
     updatedStatus[currentQuestionIndex] = status;
     setQuestionStatus(updatedStatus);
   };
 
   const goToNextQuestion = () => {
-    //console.log("goToNextQuestion");
+    console.log("goToNextQuestion");
     setSelectedAnswer(null);
     if (currentQuestionIndex + 1 < questions.length) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setTimer(15);
     } else {
-      // Notify server that this client has finished the quiz
       handleQuizEnd();
     }
   };
 
-  //console.log({ quizStarted });
+  console.log({ quizStarted });
   if (!quizStarted) {
     return <div>Waiting for another player to join...</div>;
   }
 
-  //console.log({ waitingForOpponent });
+  console.log({ waitingForOpponent });
   if (waitingForOpponent) {
     return (
       <main className="bg-[#dbd9e3] flex min-h-screen flex-col items-center justify-center p-24">
@@ -205,113 +214,36 @@ const Home: React.FC<HomeProps> = ({ params }) => {
     );
   }
 
-  //console.log({ gameOver });
+  console.log({ gameOver });
   if (gameOver) {
     return (
       <main className="bg-[#dbd9e3] flex min-h-screen flex-col items-center justify-center p-24">
         <div className="bg-[#f0bf4c] rounded-lg shadow-md p-8 text-center">
           <h1 className="text-2xl font-bold">Game Over</h1>
-          <p className="text-lg">{gameOver}</p>
+          <p>{gameOver}</p>
         </div>
       </main>
     );
   }
-
-  //console.log({ showResult });
-  if (showResult && scores) {
-    let winnerMessage;
-
-    if (scores.player1 > scores.player2) {
-      winnerMessage = "Player 1 Wins!";
-    } else if (scores.player2 > scores.player1) {
-      winnerMessage = "Player 2 Wins!";
-    } else {
-      winnerMessage = "It's a Tie!";
-    }
-    return (
-      <main className="bg-[#dbd9e3] flex min-h-screen flex-col items-center justify-center p-24">
-        <div className="bg-[#f0bf4c] rounded-lg shadow-md p-8 text-center">
-          <h1 className="text-2xl font-bold mb-2">Quiz Completed!!</h1>
-          <p className="text-lg">
-            Player 1 score: {scores.player1} ed coins
-            <PiCoins className="inline-block ml-2" />
-          </p>
-          <p className="text-lg">
-            Player 2 score: {scores.player2} ed coins
-            <PiCoins className="inline-block ml-2" />
-          </p>
-          <p className="text-lg font-bold">{winnerMessage}</p>
-        </div>
-      </main>
-    );
-  }
-
-  if (questions.length === 0) {
-    return <div>Loading...</div>;
-  }
-
-  const question = questions[currentQuestionIndex];
-
-  const playerMessage =
-    playerId === players.player1
-      ? "You are Player 1"
-      : playerId === players.player2
-      ? "You are Player 2"
-      : "";
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24 bg-white">
-      <div className="w-full max-w-md text-center">
-        <h1 className="text-3xl font-bold mb-2">Quiz Time!</h1>
-        <p className="text-lg font-bold">{playerMessage}</p>
-      </div>
-      <div className="relative w-full max-w-[40rem]">
-        <div className="bg-[#f0bf4c] rounded-3xl border-2 border-gray-600 w-full h-full absolute top-0 left-0 transform rotate-6"></div>
-        <div className="bg-[#dbd9e3] rounded-3xl border-2 flex flex-col items-center justify-center border-black p-8 w-full relative z-10">
-          <div className="flex justify-center mb-4">
-            {questionStatus.map((status, index) => (
-              <div
-                key={index}
-                className={`w-10 h-10 flex items-center justify-center rounded-full border-2 border-black mx-2 ${
-                  index === currentQuestionIndex
-                    ? "bg-yellow-500"
-                    : "bg-gray-100"
-                }`}
-              >
-                {index + 1}
-              </div>
-            ))}
-          </div>
-          <div className="relative text-center mb-8 border-2 border-black w-full bg-white p-5 rounded-2xl">
-            <h2 className="text-lg font-medium">{question.question}</h2>
-            <div className="absolute bottom-2 right-4 w-12 h-12 rounded-full border-2 border-black flex items-center justify-center bg-red-200 translate-y-8">
-              {timer}s
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4 w-full mb-4">
-            {question.options.map((option, index) => (
-              <CustomButton
-                key={index}
-                text={option}
-                onClick={() => handleAnswerClick(option)}
-              />
-            ))}
-          </div>
-          <div className="flex text-lg font-medium w-full items-center justify-center mt-3 mb-10">
-            ---------------------- <PiCoins className="inline-block mx-2" /> 10
-            ed coins ----------------------
-          </div>
-          <div className="flex w-full justify-between mt-4">
-            <div className="w-1/2 text-left">
-              Player 1 : {scores && scores.player1} ed coins
-              <PiCoins className="inline-block ml-2" />
-            </div>
-            <div className="w-1/2 text-right">
-              Player 2 : {scores && scores.player2} ed coins
-              <PiCoins className="inline-block ml-2" />
-            </div>
-          </div>
+    <main className="bg-[#dbd9e3] flex min-h-screen flex-col items-center justify-center p-24">
+      <div className="bg-[#f0bf4c] rounded-sm shadow-md p-6 px-16 text-center">
+        <h1 className="text-2xl font-bold">
+          {questions[currentQuestionIndex]?.question}
+        </h1>
+        <div>
+          {questions[currentQuestionIndex]?.options.map((option, index) => (
+            <button
+              key={index}
+              onClick={() => handleAnswerClick(option)}
+              className="m-2 p-2 bg-white rounded-lg shadow-md"
+            >
+              {option}
+            </button>
+          ))}
         </div>
+        <p>Time left: {timer}s</p>
       </div>
     </main>
   );

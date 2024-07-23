@@ -11,12 +11,11 @@ const app = next({ dev });
 const handler = app.getRequestHandler();
 
 let io;
-let users = 0;
+let rooms = {};
+let users = {};
 let quizStarted = false;
 let scores = { player1: 0, player2: 0 };
 let questions = [];
-let players = {}; // To store the socket ids of the players
-let finishedPlayers = {};
 
 app.prepare().then(() => {
   const httpServer = createServer((req, res) => {
@@ -30,72 +29,117 @@ app.prepare().then(() => {
   });
 
   io.on("connection", (socket) => {
-    users++;
-    console.log("A user connected", users);
+    console.log("A user connected", socket.id);
 
-    if (users === 1) {
-      players.player1 = socket.id;
-    } else if (users === 2) {
-      players.player2 = socket.id;
-      quizStarted = true;
-      questions = [...data.questions]
-        .sort(() => 0.5 - Math.random())
-        .slice(0, 5);
-      io.emit("players", players);
-      io.emit("startQuiz", questions);
-      //console.log("Quiz started with questions:", questions);
-    }
+    socket.on("userJoinedQuizRoom", (roomCode, username) => {
+      console.log("user joined quiz room", roomCode, username);
+      socket.join(roomCode);
 
-    socket.on("updateScore", (score) => {
-      let player = Object.keys(players).find(
-        (key) => players[key] === socket.id
-      );
-      if (player) {
-        scores[player] = score;
-        io.emit("scoreUpdate", scores);
+      io.to(roomCode).emit("roomState", rooms[roomCode]);
 
-        // Print players' scores to the console
-        console.log(
-          `Scores updated: Player 1 - ${scores.player1}, Player 2 - ${scores.player2}`
-        );
-
-        // if (scores[player] >= 50) {
-        //   io.emit("gameOver", `${player} wins!`);
-        // }
+      if (rooms[roomCode].playerCount === 2) {
+        console.log("Two players joined, starting quiz");
+        quizStarted = true;
+        questions = [...data.questions]
+          .sort(() => 0.5 - Math.random())
+          .slice(0, 5);
+        io.to(roomCode).emit("startQuiz", questions);
       }
     });
 
-    socket.on("requestOpponentScore", () => {
-      let currentPlayer = Object.keys(players).find(
-        (key) => players[key] === socket.id
+    socket.on("createRoom", (roomCode, username) => {
+      console.log("Create room request received");
+      rooms[roomCode] = { players: [socket.id], playerCount: 1 };
+      users[socket.id] = { room: roomCode, username };
+
+      socket.join(roomCode);
+      console.log({ rooms });
+
+      io.emit(
+        "roomList",
+        Object.keys(rooms).map((code) => ({
+          code,
+          playerCount: rooms[code].playerCount,
+        }))
       );
-      let opponentPlayer = currentPlayer === "player1" ? "player2" : "player1";
-      io.to(socket.id).emit("opponentScore", scores[opponentPlayer] || 0);
     });
 
-    socket.on("quizEnd", () => {
-      let player = Object.keys(players).find(
-        (key) => players[key] === socket.id
+    socket.on("joinRoom", (roomCode, username) => {
+      console.log(
+        `Join request received: Room Code - ${roomCode}, Username - ${username}`
       );
-      if (player) {
-        finishedPlayers[player] = true;
-        console.log("=====", finishedPlayers);
-        if (finishedPlayers.player1 && finishedPlayers.player2) {
-          console.log("GAME finished");
-          io.emit("showResults", scores);
-        } else {
-          io.to(socket.id).emit("waitingForOpponent");
+      if (rooms[roomCode] && rooms[roomCode].playerCount < 2) {
+        rooms[roomCode].players.push(socket.id);
+        rooms[roomCode].playerCount++;
+
+        users[socket.id] = { room: roomCode, username };
+        socket.join(roomCode);
+
+        // Emit room state to all clients in the room
+        // io.to(roomCode).emit("roomState", rooms[roomCode]);
+        io.to(socket.id).emit("roomState", rooms[roomCode]);
+
+        if (rooms[roomCode].playerCount === 2) {
+          console.log("Two players joined, starting quiz");
+          quizStarted = true;
+          questions = [...data.questions]
+            .sort(() => 0.5 - Math.random())
+            .slice(0, 5);
+          io.to(socket.id).emit("startQuiz", questions);
         }
       }
     });
 
-    socket.on("disconnect", () => {
-      users--;
-      if (users < 2) {
-        quizStarted = false;
-        io.emit("resetQuiz");
+    socket.on("getRooms", () => {
+      console.log("Get rooms request received");
+      console.log({ rooms });
+      socket.emit(
+        "roomList",
+        Object.keys(rooms).map((code) => ({
+          code,
+          playerCount: rooms[code].playerCount,
+        }))
+      );
+    });
+
+    // socket.on("initiateQuiz", () => {
+    //   console.log("Start quiz request received");
+    //   io.emit("startQuiz", { quizStarted: true });
+    // });
+
+    socket.on("updateScore", (score) => {
+      console.log("Update Score received!");
+      let player = Object.keys(users).find(
+        (key) => users[key].room === users[socket.id].room && key === socket.id
+      );
+      if (player) {
+        scores[player] = score;
+        io.to(users[socket.id].room).emit("scoreUpdate", scores);
       }
-      console.log("A user disconnected", users);
+    });
+
+    socket.on("disconnect", () => {
+      console.log("disconnect quiz request received");
+      // let roomCode = users[socket.id]?.room;
+      // if (roomCode) {
+      //   rooms[roomCode].players = rooms[roomCode].players.filter(
+      //     (player) => player !== socket.id
+      //   );
+      //   rooms[roomCode].playerCount--;
+      //   delete users[socket.id];
+      //   if (rooms[roomCode].playerCount === 0) {
+      //     delete rooms[roomCode];
+      //   }
+      // }
+      console.log({ rooms });
+      // io.emit(
+      //   "roomList",
+      //   Object.keys(rooms).map((code) => ({
+      //     code,
+      //     playerCount: rooms[code].playerCount,
+      //   }))
+      // );
+      console.log("A user disconnected", socket.id);
     });
   });
 
