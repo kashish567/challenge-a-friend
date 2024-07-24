@@ -28,8 +28,8 @@ const CreateRoom = () => {
   const createRoomLink = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("roomCode", roomCode, "username", username);
-    setRoomLink(`http://localhost:3000/room/${roomCode}/`);
     socket.emit("createRoom", roomCode, username);
+    setRoomLink(`http://localhost:3000/room/${roomCode}/`);
   };
 
   return (
@@ -53,7 +53,7 @@ const CreateRoom = () => {
             onChange={(e) => setRoomCode(e.target?.value)}
           />
           <Button type="submit" className="mt-4">
-            Generate Room Link
+            Create Room Link
           </Button>
         </form>
 
@@ -61,11 +61,11 @@ const CreateRoom = () => {
           <div className="bg-[#f0bf4c] h-auto w-auto p-6 rounded-md m-6 shadow-md shadow-black">
             <div className="mt-4 flex flex-col items-center justify-center gap-4">
               <h1 className="font-semibold">
-                {username.toUpperCase()} share this with your friend to
-                challenge him/her.
+                {username.toUpperCase()} share this with your friend
               </h1>
               <p className="text-xl">Room Link: {roomLink}</p>
 
+              {/*an */}
               <Link href={`/room/${roomCode}/${username}`}>
                 <Button>Join Room</Button>
               </Link>
