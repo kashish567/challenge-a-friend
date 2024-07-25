@@ -52,7 +52,6 @@ const Home: React.FC<HomeProps> = ({ params }) => {
     });
 
     socket.on("roomState", (roomState) => {
-      // Check if both players are in the room and waiting for opponent
       console.log("count", roomState.playerCount);
       if (roomState.playerCount < 2) {
         setIsPlayer1(true);
@@ -80,6 +79,10 @@ const Home: React.FC<HomeProps> = ({ params }) => {
     socket.on("quiz-started", (data) => {
       console.log(data); // Log received data
       setQuizStarted(data.quizStarted);
+    });
+
+    socket.on("waitingForOpponent", () => {
+      setWaitingForOpponent(true);
     });
 
     return () => {
@@ -143,12 +146,12 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   const handleGameOver = (message: string) => {
     console.log("handleGameOver");
     setGameOver(message);
-    socket.emit("quizEnd");
+    socket.emit("quizEnd", params.id, isPlayer1 ? "player1" : "player2");
   };
 
   const handleQuizEnd = () => {
     console.log("handleQuizEnd");
-    socket.emit("quizEnd");
+    socket.emit("quizEnd", params.id, isPlayer1 ? "player1" : "player2");
   };
 
   const handleShowResults = (finalScores: { [key: string]: number }) => {
@@ -157,13 +160,6 @@ const Home: React.FC<HomeProps> = ({ params }) => {
     setShowResult(true);
     setWaitingForOpponent(false);
   };
-
-  // useEffect(() => {
-  //   socket.on("waitingForOpponent", () => setWaitingForOpponent(true));
-  //   return () => {
-  //     socket.off("waitingForOpponent");
-  //   };
-  // }, []);
 
   const handleAnswerClick = (answer: string) => {
     console.log("handleAnswerClick");
@@ -253,13 +249,13 @@ const Home: React.FC<HomeProps> = ({ params }) => {
     return (
       <main className="bg-[#dbd9e3] flex min-h-screen flex-col items-center justify-center p-24">
         <div className="bg-[#f0bf4c] rounded-lg shadow-md p-8 text-center">
-          <h1 className="text-2xl font-bold mb-2">Quiz Completed!!</h1>
+          <h1 className="text-2xl font-bold mb-2">Quiz Completed!</h1>
           <p className="text-lg">
-            Player 1 score: {scores.player1} ed coins
+            Player 1 Score: {scores.player1} ed coins
             <PiCoins className="inline-block ml-2" />
           </p>
-          <p className="text-lg">
-            Player 2 score: {scores.player2} ed coins
+          <p className="text-lg mb-2">
+            Player 2 Score: {scores.player2} ed coins
             <PiCoins className="inline-block ml-2" />
           </p>
           <p className="text-lg font-bold">{winnerMessage}</p>
@@ -271,8 +267,9 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   if (questions.length === 0) {
     return <div>Loading...</div>;
   }
-  const question = questions[currentQuestionIndex];
 
+  console.log({ questions });
+  const question = questions[currentQuestionIndex];
   const playerMessage = isPlayer1 ? "You are Player 1" : "You are Player 2";
 
   return (
@@ -309,6 +306,9 @@ const Home: React.FC<HomeProps> = ({ params }) => {
               <CustomButton
                 key={index}
                 text={option}
+                className={`mb-2 cursor-pointer ${
+                  selectedAnswer === option ? "bg-yellow-200" : "bg-white"
+                }`}
                 onClick={() => handleAnswerClick(option)}
               />
             ))}

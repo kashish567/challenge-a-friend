@@ -17,6 +17,7 @@ let quizStarted = false;
 //let scores = { player1: 0, player2: 0 };
 let scores = {};
 let questions = [];
+let finishedPlayers = {};
 
 app.prepare().then(() => {
   const httpServer = createServer((req, res) => {
@@ -77,9 +78,8 @@ app.prepare().then(() => {
       );
 
       if (!rooms[roomCode] || rooms[roomCode].playerCount >= 2) {
-        //change
         console.log(`Room ${roomCode} is either full or does not exist`);
-        return; //change
+        return;
       }
 
       rooms[roomCode].players.push(socket.id);
@@ -144,6 +144,20 @@ app.prepare().then(() => {
         // }
       } else {
         console.log("User room or room not found for socket ID:", socket.id); //change
+      }
+    });
+
+    socket.on("quizEnd", (roomId, playerNumber) => {
+      console.log("Quiz end received for player:", playerNumber);
+      if (!finishedPlayers[roomId]) {
+        finishedPlayers[roomId] = {};
+      }
+      finishedPlayers[roomId][playerNumber] = true;
+      if (finishedPlayers[roomId].player1 && finishedPlayers[roomId].player2) {
+        console.log("Both players finished. Showing results...");
+        io.to(roomId).emit("showResults", scores[roomId]);
+      } else {
+        socket.emit("waitingForOpponent");
       }
     });
 
