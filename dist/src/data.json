@@ -1,69 +1,39 @@
 {
     "questions": [
       {
-        "question": "In the MERN stack, which tool is commonly used for managing application state in React?",
-        "options": ["Redux", "Context API", "MobX", "Flux"],
+        "question": "Which tool is commonly used for managing application state in React?",
+        "options": ["Redux", "Flux", "MobX", "State"],
         "correctAnswer": "Redux"
       },
       {
-        "question": "What is the purpose of Mongoose in a MERN stack application?",
-        "options": [
-          "To provide an interface for interacting with a SQL database",
-          "To define schemas and interact with a MongoDB database",
-          "To serve static files",
-          "To manage client-side routing"
-        ],
-        "correctAnswer": "To define schemas and interact with a MongoDB database"
+        "question": "What is Mongoose used for in a MERN stack application?",
+        "options": ["Schemas", "Routing", "Styling", "Templates"],
+        "correctAnswer": "Schemas"
       },
       {
-        "question": "Which of the following is a valid use case for using `useEffect` in a React component?",
-        "options": [
-          "To update the component's state synchronously",
-          "To manage side effects such as data fetching or subscriptions",
-          "To define reusable logic for components",
-          "To define component styles"
-        ],
-        "correctAnswer": "To manage side effects such as data fetching or subscriptions"
+        "question": "What does `useEffect` manage in a React component?",
+        "options": ["State", "Side-effects", "Rendering", "Events"],
+        "correctAnswer": "Side-effects"
       },
       {
-        "question": "In a MERN stack application, how can you protect routes that require authentication?",
-        "options": [
-          "Using Express middleware for route protection",
-          "Using a React component to conditionally render based on authentication",
-          "Storing authentication tokens in cookies or local storage",
-          "All of the above"
-        ],
-        "correctAnswer": "All of the above"
+        "question": "How can you protect routes in a MERN stack application?",
+        "options": ["Middleware", "Tokens", "Session", "OAuth"],
+        "correctAnswer": "Middleware"
       },
       {
-        "question": "What is the purpose of the `async` and `await` keywords in Node.js?",
-        "options": [
-          "To make asynchronous code run synchronously",
-          "To simplify working with promises and handle asynchronous operations",
-          "To manage HTTP requests",
-          "To define routes in Express"
-        ],
-        "correctAnswer": "To simplify working with promises and handle asynchronous operations"
+        "question": "What do `async` and `await` simplify in Node.js?",
+        "options": ["Promises", "Callbacks", "Loops", "Functions"],
+        "correctAnswer": "Promises"
       },
       {
-        "question": "Which of the following best describes the role of Webpack in a MERN stack application?",
-        "options": [
-          "A database management tool",
-          "A build tool that bundles JavaScript modules",
-          "A CSS preprocessor",
-          "A backend framework"
-        ],
-        "correctAnswer": "A build tool that bundles JavaScript modules"
+        "question": "What role does Webpack play in a MERN stack application?",
+        "options": ["Bundler", "Compiler", "Server", "Router"],
+        "correctAnswer": "Bundler"
       },
       {
-        "question": "What is the main advantage of using the `Context API` in React?",
-        "options": [
-          "To manage state in a global context without passing props through every level of the component tree",
-          "To define component lifecycle methods",
-          "To handle routing in a React application",
-          "To perform asynchronous data fetching"
-        ],
-        "correctAnswer": "To manage state in a global context without passing props through every level of the component tree"
+        "question": "What does the `Context API` manage in React?",
+        "options": ["State", "Props", "Events", "Routes"],
+        "correctAnswer": "State"
       }
     ]
   }
