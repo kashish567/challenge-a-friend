@@ -1,7 +1,7 @@
 import { createServer } from "http";
 import next from "next";
 import { Server } from "socket.io";
-import data from "./src/data.json" assert { type: "json" };
+import data from "../src/data.json" assert { type: "json" };
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";

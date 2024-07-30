@@ -34,6 +34,41 @@
         "question": "Which planet is closest to the sun?",
         "options": ["Earth", "Mars", "Mercury", "Venus"],
         "correctAnswer": "Mercury"
+      },
+      {
+        "question": "Which tool is commonly used for managing application state in React?",
+        "options": ["Redux", "Flux", "MobX", "State"],
+        "correctAnswer": "Redux"
+      },
+      {
+        "question": "What is Mongoose used for in a MERN stack application?",
+        "options": ["Schemas", "Routing", "Styling", "Templates"],
+        "correctAnswer": "Schemas"
+      },
+      {
+        "question": "What does `useEffect` manage in a React component?",
+        "options": ["State", "Side-effects", "Rendering", "Events"],
+        "correctAnswer": "Side-effects"
+      },
+      {
+        "question": "How can you protect routes in a MERN stack application?",
+        "options": ["Middleware", "Tokens", "Session", "OAuth"],
+        "correctAnswer": "Middleware"
+      },
+      {
+        "question": "What do `async` and `await` simplify in Node.js?",
+        "options": ["Promises", "Callbacks", "Loops", "Functions"],
+        "correctAnswer": "Promises"
+      },
+      {
+        "question": "What role does Webpack play in a MERN stack application?",
+        "options": ["Bundler", "Compiler", "Server", "Router"],
+        "correctAnswer": "Bundler"
+      },
+      {
+        "question": "What does the `Context API` manage in React?",
+        "options": ["State", "Props", "Events", "Routes"],
+        "correctAnswer": "State"
       }
     ]
   }
