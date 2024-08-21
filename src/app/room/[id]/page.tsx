@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Socket, io } from "socket.io-client";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 
 let socket: Socket;
 
@@ -12,8 +13,8 @@ interface Params {
 
 const Room = ({ params }: { params: Params }) => {
   const [username, setUsername] = useState("");
-
-  const history = useRouter();
+  const [errorMessage, setErrorMessage] = useState("");
+  const router = useRouter(); // Renamed for clarity
 
   useEffect(() => {
     socket = io("http://localhost:3000");
@@ -23,14 +24,34 @@ const Room = ({ params }: { params: Params }) => {
     };
   }, []);
 
-  const onJoinRoomClick = (e: any) => {
+  const checkUserExists = async (username: string) => {
+    try {
+      const response = await axios.post("http://localhost:3000/api/challenge", {
+        username, // Fixed typo in the route
+      });
+      return response.data.user;
+    } catch (error) {
+      console.error("Error checking user existence:", error);
+      return false;
+    }
+  };
+
+  const onJoinRoomClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    const userExists = await checkUserExists(username);
+    if (!userExists) {
+      setErrorMessage("Username not registered. Please register first.");
+      return;
+    }
+
     socket.emit("joinRoom", params.id, username);
-    history.push(`/room/${params.id}/${username}`);
+    router.push(`/room/${params.id}/${username}`); // Corrected template literal
   };
 
   return (
     <div className="h-screen w-screen bg-[#dbd9e3] flex flex-col justify-center items-center">
-      <div className="p-6 bg-[#f0bf4c] rounded-md shadow-md shadow-black ">
+      <div className="p-6 bg-[#f0bf4c] rounded-md shadow-md shadow-black">
         <div className="flex flex-col font-semibold">
           <label htmlFor="username">Username</label>
           <input
@@ -45,6 +66,11 @@ const Room = ({ params }: { params: Params }) => {
               Join Room
             </Button>
           </div>
+          {errorMessage && (
+            <div className="mt-4 text-red-600 font-semibold">
+              {errorMessage}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React from "react";
 import { Socket, io } from "socket.io-client";
-import Room from "../room/[id]/page";
+import axios from "axios";
 
 let socket: Socket;
 
@@ -12,29 +12,46 @@ const CreateRoom = () => {
   const [username, setUsername] = useState("");
   const [roomCode, setRoomCode] = useState("");
   const [roomLink, setRoomLink] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     socket = io("http://localhost:3000");
-    // socket.on("createRoom", (roomList: Room[]) => {
-    //   setRooms(roomList);
-    //   console.log({ roomList });
-    // });
 
     return () => {
       socket.disconnect();
     };
   }, []);
 
-  const createRoomLink = (e: React.FormEvent) => {
+  const checkUserExists = async (username: string) => {
+    try {
+      const response = await axios.post("http://localhost:3000/api/challenge", {
+        username,
+      });
+      return response.data.user;
+    } catch (error) {
+      console.error("Error checking user existence:", error);
+      return false;
+    }
+  };
+
+  const createRoomLink = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("roomCode", roomCode, "username", username);
+
+    const userExists = await checkUserExists(username);
+    if (!userExists) {
+      setErrorMessage("Username not registered. Please register first.");
+      return;
+    }
+
     socket.emit("createRoom", roomCode, username);
-    setRoomLink(`http://localhost:3000/room/${roomCode}/`);
+    setRoomLink(`http://localhost:3000/room/${roomCode}/${username}`);
+    setErrorMessage(""); // Clear any previous error messages
   };
 
   return (
     <div className="h-screen w-screen bg-[#dbd9e3] flex flex-col justify-center items-center">
-      <div className="p-6 bg-[#f0bf4c] rounded-md shadow-md shadow-black ">
+      <div className="p-6 bg-[#f0bf4c] rounded-md shadow-md shadow-black">
         <form className="flex flex-col font-semibold" onSubmit={createRoomLink}>
           <label htmlFor="username">Username</label>
           <input
@@ -57,6 +74,10 @@ const CreateRoom = () => {
           </Button>
         </form>
 
+        {errorMessage && (
+          <div className="mt-4 text-red-600 font-semibold">{errorMessage}</div>
+        )}
+
         {roomLink && (
           <div className="bg-[#f0bf4c] h-auto w-auto p-6 rounded-md m-6 shadow-md shadow-black">
             <div className="mt-4 flex flex-col items-center justify-center gap-4">
@@ -65,7 +86,6 @@ const CreateRoom = () => {
               </h1>
               <p className="text-xl">Room Link: {roomLink}</p>
 
-              {/*an */}
               <Link href={`/room/${roomCode}/${username}`}>
                 <Button>Join Room</Button>
               </Link>
