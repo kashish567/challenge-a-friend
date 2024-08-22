@@ -24,13 +24,20 @@ const CreateRoom = () => {
 
   const checkUserExists = async (username: string) => {
     try {
-      const response = await axios.post("http://localhost:3000/api/challenge", {
+      const response = await axios.post("http://localhost:3000/api/user", {
         username,
       });
-      return response.data.user;
-    } catch (error) {
-      console.error("Error checking user existence:", error);
-      return false;
+
+      // Check if the response status is 200, indicating the user exists
+      return response.data.success;
+    } catch (error:any) {
+      if (error.response && error.response.status === 404) {
+        // Handle case where the user does not exist
+        console.error("User does not exist:", error.response.data);
+      } else {
+        console.error("Error checking user existence:", error.message);
+      }
+      return false; // Return false if any error occurs or user is not found
     }
   };
 
@@ -39,13 +46,15 @@ const CreateRoom = () => {
     console.log("roomCode", roomCode, "username", username);
 
     const userExists = await checkUserExists(username);
+
+    // Prevent room creation if the user does not exist
     if (!userExists) {
       setErrorMessage("Username not registered. Please register first.");
       return;
     }
 
     socket.emit("createRoom", roomCode, username);
-    setRoomLink(`http://localhost:3000/room/${roomCode}/${username}`);
+    setRoomLink(`http://localhost:3000/room/${roomCode}/`);
     setErrorMessage(""); // Clear any previous error messages
   };
 

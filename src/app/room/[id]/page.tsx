@@ -26,10 +26,10 @@ const Room = ({ params }: { params: Params }) => {
 
   const checkUserExists = async (username: string) => {
     try {
-      const response = await axios.post("http://localhost:3000/api/challenge", {
+      const response = await axios.post("http://localhost:3000/api/user", {
         username, // Fixed typo in the route
       });
-      return response.data.user;
+      return response.data.success;
     } catch (error) {
       console.error("Error checking user existence:", error);
       return false;

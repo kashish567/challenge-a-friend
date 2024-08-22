@@ -5,10 +5,11 @@ const challengeSchema = new Schema(
     username: {
       type: String,
       required: true,
+      unique: true
     },
     edcoins: {
       type: Number,
-      required: true,
+      required: false,
     },
   },
   { timestamps: true }

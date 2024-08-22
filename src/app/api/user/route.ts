@@ -3,29 +3,39 @@ import Challenge from "@/schema/userSchema"; // Fixed typo in import
 import dbConnect from "@/db/db";
 
 export const POST = async (req: NextRequest) => {
-    try {
-        // Connect to the database
-        await dbConnect();
-        
-        // Parse request body
-        const body = await req.json();
-        const { username, edcoins } = body;
+  try {
+    // Connect to the database
+    await dbConnect();
 
-        // Validate input
-        if (!username || edcoins === undefined || edcoins === null) {
-            return NextResponse.json({ error: "Username and Edcoins are required" }, { status: 400 });
-        }
+    // Parse the request body
+    const body = await req.json();
+    const { username } = body;
 
-        // Create a new Challenge instance and save it
-        const challenge = new Challenge({ username, edcoins });
-        await challenge.save();
-
-        // Send success response
-        return NextResponse.json({ success: true }, { status: 201 });
-        
-    } catch (error: any) {
-        // Handle errors
-        console.error(`Error: ${error.message}`);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    // Validate the presence of username
+    if (!username) {
+      return NextResponse.json(
+        { error: "Username is required" },
+        { status: 400 }
+      );
     }
+
+    // Check if the user exists in the Challenge collection
+    const userExists = await Challenge.findOne({ username });
+
+    console.log(`User exists: ${userExists}`); // Log the result of the query
+
+    if (!userExists) {
+      return NextResponse.json(
+        { error: "User does not exist", user: false },
+        { status: 404 }
+      );
+    }
+
+    // Respond with success if the user exists
+    return NextResponse.json({ success: true, user: true }, { status: 200 });
+  } catch (error: any) {
+    // Log the error and return a server error response
+    console.error(`Error: ${error.message}`);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 };
