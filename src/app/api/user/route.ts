@@ -20,21 +20,21 @@ export const POST = async (req: NextRequest) => {
     }
 
     // Check if the user exists in the Challenge collection
-    const userExists = await Challenge.findOne({ username });
+    const user = await Challenge.findOne({ username });
 
-    console.log(`User exists: ${userExists}`); // Log the result of the query
-
-    if (!userExists) {
+    if (!user) {
       return NextResponse.json(
         { error: "User does not exist", user: false },
         { status: 404 }
       );
     }
 
-    // Respond with success if the user exists
-    return NextResponse.json({ success: true, user: true }, { status: 200 });
+    // Respond with success and return the user's edcoins
+    return NextResponse.json(
+      { success: true, user: true, edcoins: user.edcoins || 0 },
+      { status: 200 }
+    );
   } catch (error: any) {
-    // Log the error and return a server error response
     console.error(`Error: ${error.message}`);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

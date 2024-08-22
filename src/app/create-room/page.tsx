@@ -13,6 +13,7 @@ const CreateRoom = () => {
   const [roomCode, setRoomCode] = useState("");
   const [roomLink, setRoomLink] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [edcoins, setEdcoins] = useState<number | null>(null); // State to store edcoins
 
   useEffect(() => {
     socket = io("http://localhost:3000");
@@ -28,30 +29,37 @@ const CreateRoom = () => {
         username,
       });
 
-      // Check if the response status is 200, indicating the user exists
-      return response.data.success;
-    } catch (error:any) {
+      // Check if the response indicates success and user existence
+      if (response.data.success && response.data.user) {
+        setEdcoins(response.data.edcoins); // Set edcoins state
+        return true;
+      }
+    } catch (error: any) {
       if (error.response && error.response.status === 404) {
-        // Handle case where the user does not exist
         console.error("User does not exist:", error.response.data);
       } else {
         console.error("Error checking user existence:", error.message);
       }
-      return false; // Return false if any error occurs or user is not found
     }
+    return false; // Return false if any error occurs or user is not found
   };
 
   const createRoomLink = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("roomCode", roomCode, "username", username);
+    console.log("roomCode", roomCode, "username", username, "edcoins", edcoins);
 
     const userExists = await checkUserExists(username);
 
-    // Prevent room creation if the user does not exist
+    // Prevent room creation if the user does not exist or edcoins are not sufficient
     if (!userExists) {
       setErrorMessage("Username not registered. Please register first.");
       return;
     }
+
+    // if (edcoins === null || edcoins <= 100) {
+    //   setErrorMessage("You need more than 100 edcoins to create a room.");
+    //   return;
+    // }
 
     socket.emit("createRoom", roomCode, username);
     setRoomLink(`http://localhost:3000/room/${roomCode}/`);
@@ -78,6 +86,13 @@ const CreateRoom = () => {
             value={roomCode}
             onChange={(e) => setRoomCode(e.target?.value)}
           />
+          {/* Display edcoins */}
+          {edcoins !== null && (
+            <div className="mt-4 text-green-600 font-semibold">
+              Available Edcoins: {edcoins}
+            </div>
+          )}
+
           <Button type="submit" className="mt-4">
             Create Room Link
           </Button>
@@ -87,7 +102,7 @@ const CreateRoom = () => {
           <div className="mt-4 text-red-600 font-semibold">{errorMessage}</div>
         )}
 
-        {roomLink && (
+        {roomLink && edcoins !== null && edcoins >= 100 ? (
           <div className="bg-[#f0bf4c] h-auto w-auto p-6 rounded-md m-6 shadow-md shadow-black">
             <div className="mt-4 flex flex-col items-center justify-center gap-4">
               <h1 className="font-semibold">
@@ -100,6 +115,12 @@ const CreateRoom = () => {
               </Link>
             </div>
           </div>
+        ) : edcoins !== null && edcoins <= 100 ? (
+          <div className="mt-4 text-red-600 font-semibold">
+            {"You need more than 100 edcoins to create a room."}
+          </div>
+        ) : (
+          ""
         )}
       </div>
     </div>

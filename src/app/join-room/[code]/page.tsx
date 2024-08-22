@@ -14,6 +14,7 @@ interface Params {
 const JoinRoom = ({ params }: { params: Params }) => {
   const [username, setUsername] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [edcoins, setEdcoins] = useState<number | null>(null); // State to store edcoins
   const router = useRouter(); // Renamed for clarity
 
   useEffect(() => {
@@ -27,13 +28,18 @@ const JoinRoom = ({ params }: { params: Params }) => {
   const checkUserExists = async (username: string) => {
     try {
       const response = await axios.post("http://localhost:3000/api/user", {
-        username, // Fixed typo in the route
+        username,
       });
-      return response.data.user;
+
+      // Check if the user exists and set the edcoins if they do
+      if (response.data.user) {
+        setEdcoins(response.data.edcoins || 0); // Set edcoins state
+        return true;
+      }
     } catch (error) {
       console.error("Error checking user existence:", error);
-      return false;
     }
+    return false;
   };
 
   const onJoinRoomClick = async (e: React.MouseEvent) => {
@@ -46,7 +52,7 @@ const JoinRoom = ({ params }: { params: Params }) => {
     }
 
     socket.emit("joinRoom", params.code, username);
-    router.push(`/room/${params.code}/${username}`); // Fixed template literal
+    router.push(`/room/${params.code}/${username}`);
   };
 
   return (
@@ -61,6 +67,13 @@ const JoinRoom = ({ params }: { params: Params }) => {
             value={username}
             onChange={(e) => setUsername(e.target?.value)}
           />
+
+          {/* Display edcoins */}
+          {edcoins !== null && (
+            <div className="mt-4 text-green-600 font-semibold">
+              Available Edcoins: {edcoins}
+            </div>
+          )}
           <div className="flex items-center justify-center">
             <Button onClick={onJoinRoomClick} className="mt-4">
               Join Room
