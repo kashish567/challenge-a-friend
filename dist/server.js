@@ -45,6 +45,11 @@ app.prepare().then(() => {
       }
 
       socket.join(roomCode);
+      rooms[roomCode].playerName = {
+        user1 : users[0],
+        user2 : users[1]
+      }
+      console.log("rooms[roomCode]:", rooms[roomCode])
       io.to(roomCode).emit("roomState", rooms[roomCode]);
 
       if (rooms[roomCode].playerCount === 2) {

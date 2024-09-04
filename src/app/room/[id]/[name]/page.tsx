@@ -37,6 +37,8 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   const [scores, setScores] = useState<{ [key: string]: number }>();
   const [waitingForOpponent, setWaitingForOpponent] = useState<boolean>(false);
   const [isPlayer1, setIsPlayer1] = useState<boolean>(false);
+  const [player1 , setPlayer1] = useState("");
+  const [player2 , setPlayer2] = useState("");
 
   useEffect(() => {
     socket = io("http://localhost:3000");
@@ -52,12 +54,15 @@ const Home: React.FC<HomeProps> = ({ params }) => {
     });
 
     socket.on("roomState", (roomState) => {
+      console.log("roomState", roomState);
       console.log("count", roomState.playerCount);
       if (roomState.playerCount < 2) {
         setIsPlayer1(true);
         setWaitingForOpponent(true);
       } else {
         setWaitingForOpponent(false);
+        setPlayer1(roomState.playerName.user1)
+        setPlayer2(roomState.playerName.user2)
       }
     });
 
@@ -270,7 +275,8 @@ const Home: React.FC<HomeProps> = ({ params }) => {
 
   console.log({ questions });
   const question = questions[currentQuestionIndex];
-  const playerMessage = isPlayer1 ? "You are Player 1" : "You are Player 2";
+  const playerMessage = isPlayer1 ? player1 : player2;
+  // console.log("Player Message", playerMessage);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24 bg-white">
