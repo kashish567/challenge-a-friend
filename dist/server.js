@@ -2,6 +2,7 @@ import { createServer } from "http";
 import next from "next";
 import { Server } from "socket.io";
 import data from "../src/data.json" assert { type: "json" };
+import axios from 'axios';
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
@@ -12,7 +13,7 @@ const handler = app.getRequestHandler();
 
 let io;
 let rooms = {};
-// let users = {};
+let users = [];
 let quizStarted = false;
 //let scores = { player1: 0, player2: 0 };
 let scores = {};
@@ -33,9 +34,10 @@ app.prepare().then(() => {
   io.on("connection", (socket) => {
     console.log("A user connected", socket.id);
 
-    socket.on("userJoinedQuizRoom", (roomCode, username) => {
+    socket.on("userJoinedQuizRoom", async (roomCode, username) => {
       console.log("user joined quiz room", roomCode, username);
-
+      users.push(username);
+      console.log("users array", users);
       //ch
       if (!rooms[roomCode]) {
         console.log(`Room ${roomCode} does not exist`);
@@ -48,6 +50,14 @@ app.prepare().then(() => {
       if (rooms[roomCode].playerCount === 2) {
         console.log("Two players joined, starting quiz");
         quizStarted = true;
+        for (const name of users) {
+          try {
+            const response = await axios.put(`http://localhost:3000/api/user/${name}`);
+            console.log("User updated:", response.data);
+          } catch (error) {
+            console.error("Error checking user existence:", error);
+          }
+        }
         questions = [...data.questions]
           .sort(() => 0.5 - Math.random())
           .slice(0, 5);
@@ -72,7 +82,7 @@ app.prepare().then(() => {
       );
     });
 
-    socket.on("joinRoom", (roomCode, username) => {
+    socket.on("joinRoom", async (roomCode, username) => {
       console.log(
         `Join request received: Room Code - ${roomCode}, Username - ${username}`
       );
