@@ -29,45 +29,52 @@ const ChallengeAFriend = () => {
   }, []);
 
   return (
-    <div className="h-screen w-screen bg-[#dbd9e3] flex flex-col justify-center items-center">
-      <div className="p-6 bg-[#f0bf4c] rounded-md shadow-md shadow-black mb-6  w-1/2">
-        <h1 className="text-3xl font-semibold mb-4 text-center">
-          Challenge a Friend!
-        </h1>
-      </div>
-      <div className="p-6 bg-[#f0bf4c] rounded-md shadow-md shadow-black w-1/2">
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-center">
+    <div className="h-screen w-screen bg-greybg flex flex-col justify-center items-center">
+      <div className="-rotate-6 bg-yellowbg border border-black rounded-3xl w-1/2">
+      {/* <div className="p-6 bg-yellowbg border-[2px] border-black rounded-3xl flex flex-col justify-center items-center mb-6  w-1/2">
+        <h1 className="text-3xl font-semibold">Challenge a Friend!</h1>
+      </div> */}
+      <div className="rotate-6 p-6 py-8 bg-greybg border-[2px] border-black rounded-3xl w-full flex flex-col justify-center items-center gap-4">
+      <h1 className="text-3xl font-semibold">Challenge a Friend!</h1>
+      <span className="text-3xl font-semibold">------------------------------------</span>
+        <div className="flex flex-col justify-center items-center gap-4">
+          <h2 className="text-xl font-semibold text-center">
             Create a New Room
           </h2>
           <Link href="/create-room">
-            <Button>Create</Button>
+            <Button className="rounded-full">Create</Button>
           </Link>
         </div>
 
-        <div>
-          <h2 className="text-xl font-semibold mb-4 text-center">
-            Available Rooms
-          </h2>
+        <div className="w-full px-6 border flex flex-col gap-4 justify-center items-center">
+          <h2 className="text-xl font-semibold">Available Rooms</h2>
           {rooms.length === 0 ? (
             <p>No rooms available.</p>
           ) : (
-            <ul>
+            <table className="w-full px-6 border border-black">
+              <tr className="font-semibold border border-black w-full mb-2">
+                <th className="border border-black">Room Code</th>
+                <th className="border border-black">Player Count / Max Players</th>
+                <th className="border border-black">Join</th>
+              </tr>
               {rooms.map((room) => (
-                <li
+                <tr
                   key={room.code}
-                  className="flex justify-between items-center mb-2"
+                  className="w-full border border-black mb-2"
                 >
-                  <span>{room.code}</span>
-                  <span>{room.playerCount}/2</span>
-                  <Link href={`/join-room/${room.code}`}>
-                    <Button>Join</Button>
-                  </Link>
-                </li>
+                  <td className="border border-black text-center">{room.code}</td>
+                  <td className="border border-black text-center">{room.playerCount}/2</td>
+                  <td className="border border-black text-center">
+                    <Link href={`/join-room/${room.code}`}>
+                      <Button className="rounded-full">Join</Button>
+                    </Link>
+                  </td>
+                </tr>
               ))}
-            </ul>
+            </table>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

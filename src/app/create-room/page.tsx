@@ -67,33 +67,34 @@ const CreateRoom = () => {
   };
 
   return (
-    <div className="h-screen w-screen bg-[#dbd9e3] flex flex-col justify-center items-center">
-      <div className="p-6 bg-[#f0bf4c] rounded-md shadow-md shadow-black">
-        <form className="flex flex-col font-semibold" onSubmit={createRoomLink}>
-          <label htmlFor="username">Username</label>
+    <div className="h-screen w-screen bg-greybg flex flex-col justify-center items-center">
+      <div className="-rotate-6 bg-yellowbg rounded-3xl border border-black">
+        <div className="rotate-6 bg-greybg rounded-3xl flex flex-col justify-center items-center border-[2px] border-black p-6  min-h-[17rem] min-w-[30rem]">
+        <form className="flex flex-col font-semibold w-full p-4" onSubmit={createRoomLink}>
+          <label htmlFor="username">Username:</label>
           <input
             type="text"
             name="username"
-            className="mb-2 rounded-sm h-8 p-2"
+            className="mb-2 rounded-full h-8 p-2"
             value={username}
             onChange={(e) => setUsername(e.target?.value)}
           />
-          <label htmlFor="roomcode">Room Code</label>
+          <label htmlFor="roomcode">Room Code:</label>
           <input
             type="text"
             name="roomcode"
-            className="mb-2 rounded-sm h-8 p-2"
+            className="mb-2 rounded-full h-8 p-2"
             value={roomCode}
             onChange={(e) => setRoomCode(e.target?.value)}
           />
           {/* Display edcoins */}
-          {edcoins !== null && (
+          {edcoins != null && (
             <div className="mt-4 text-green-600 font-semibold">
               Available Edcoins: {edcoins}
             </div>
           )}
 
-          <Button type="submit" className="mt-4">
+          <Button type="submit" className="mt-4 rounded-full">
             Create Room Link
           </Button>
         </form>
@@ -103,7 +104,7 @@ const CreateRoom = () => {
         )}
 
         {roomLink && edcoins !== null && edcoins >= 100 ? (
-          <div className="bg-[#f0bf4c] h-auto w-auto p-6 rounded-md m-6 shadow-md shadow-black">
+          <div className="h-auto w-auto p-4">
             <div className="mt-4 flex flex-col items-center justify-center gap-4">
               <h1 className="font-semibold">
                 {username.toUpperCase()} share this with your friend
@@ -111,7 +112,7 @@ const CreateRoom = () => {
               <p className="text-xl">Room Link: {roomLink}</p>
 
               <Link href={`/room/${roomCode}/${username}`}>
-                <Button>Join Room</Button>
+                <Button className="rounded-full">Join Room</Button>
               </Link>
             </div>
           </div>
@@ -122,6 +123,7 @@ const CreateRoom = () => {
         ) : (
           ""
         )}
+        </div>
       </div>
     </div>
   );

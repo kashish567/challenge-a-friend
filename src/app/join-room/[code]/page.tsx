@@ -1,11 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/router"; // Corrected import
+import { useRouter } from "next/navigation"; // Corrected import
 import { Socket, io } from "socket.io-client";
 import axios from "axios";
 
-let socket: Socket;
+// let socket: Socket;
 
 interface Params {
   code: string;
@@ -16,12 +16,13 @@ const JoinRoom = ({ params }: { params: Params }) => {
   const [errorMessage, setErrorMessage] = useState("");
   const [edcoins, setEdcoins] = useState<number | null>(null); // State to store edcoins
   const router = useRouter(); // Renamed for clarity
+  const socket = useRef<Socket | null>(null);
 
   useEffect(() => {
-    socket = io("http://localhost:3000");
+    socket.current = io("http://localhost:3000");
 
     return () => {
-      socket.disconnect();
+      socket.current?.disconnect();
     };
   }, []);
 
@@ -51,23 +52,31 @@ const JoinRoom = ({ params }: { params: Params }) => {
       return;
     }
 
-    socket.emit("joinRoom", params.code, username);
-    router.push(`/room/${params.code}/${username}`);
+     // Ensure the socket is initialized before emitting
+     if (socket.current) {
+      socket.current.emit("joinRoom", params.code, username);
+      router.push(`/room/${params.code}/${username}`);
+    } else {
+      setErrorMessage("Unable to connect to the server.");
+    }
+    // socket.emit("joinRoom", params.code, username);
+    // router.push(`/room/${params.code}/${username}`);
   };
 
   return (
-    <div className="h-screen w-screen bg-[#dbd9e3] flex flex-col justify-center items-center">
-      <div className="p-6 bg-[#f0bf4c] rounded-md shadow-md shadow-black">
-        <div className="flex flex-col font-semibold">
-          <label htmlFor="username">Username</label>
-          <input
-            type="text"
-            name="username"
-            className="mb-2 rounded-sm h-8 p-2"
-            value={username}
-            onChange={(e) => setUsername(e.target?.value)}
-          />
-
+    <div className="h-screen w-screen bg-greybg flex flex-col justify-center items-center">
+      <div className="-rotate-6 border border-black bg-yellowbg rounded-3xl">
+        <div className="rotate-6 min-h-[12rem] min-w-[20rem] bg-greybg rounded-3xl border-[2px] border-black p-6 flex flex-col justify-center items-center font-semibold">
+          <div>
+            <label htmlFor="username">Username :</label>
+            <input
+              type="text"
+              name="username"
+              className="mb-2 rounded-full h-8 p-2 mx-2"
+              value={username}
+              onChange={(e) => setUsername(e.target?.value)}
+            />
+          </div>
           {/* Display edcoins */}
           {edcoins !== null && (
             <div className="mt-4 text-green-600 font-semibold">
@@ -75,7 +84,7 @@ const JoinRoom = ({ params }: { params: Params }) => {
             </div>
           )}
           <div className="flex items-center justify-center">
-            <Button onClick={onJoinRoomClick} className="mt-4">
+            <Button onClick={onJoinRoomClick} className="mt-4 rounded-full">
               Join Room
             </Button>
           </div>

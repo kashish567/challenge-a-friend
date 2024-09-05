@@ -212,14 +212,14 @@ const Home: React.FC<HomeProps> = ({ params }) => {
 
   console.log({ quizStarted });
   if (!quizStarted) {
-    return <div>Waiting for another player to join...</div>;
+    return <div className="bg-greybg h-screen flex justify-center items-center text-3xl">Waiting for another player to join...</div>;
   }
 
   console.log({ waitingForOpponent });
   if (waitingForOpponent) {
     return (
-      <main className="bg-[#dbd9e3] flex min-h-screen flex-col items-center justify-center p-24">
-        <div className="bg-[#f0bf4c] rounded-sm shadow-md p-6 px-16 text-center">
+      <main className="bg-greybg flex min-h-screen flex-col items-center justify-center p-24">
+        <div className="bg-yellowbg rounded-3xl border-[2px] border-black p-6 px-16 text-center">
           <h1 className="text-2xl font-bold">
             Waiting for opponent to finish...
           </h1>
@@ -231,8 +231,8 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   console.log({ gameOver });
   if (gameOver) {
     return (
-      <main className="bg-[#dbd9e3] flex min-h-screen flex-col items-center justify-center p-24">
-        <div className="bg-[#f0bf4c] rounded-lg shadow-md p-8 text-center">
+      <main className="bg-greybg flex min-h-screen flex-col items-center justify-center p-24">
+        <div className="bg-yellowbg rounded-3xl border-[2px] border-black text-center">
           <h1 className="text-2xl font-bold">Game Over</h1>
           <p>{gameOver}</p>
         </div>
@@ -252,8 +252,8 @@ const Home: React.FC<HomeProps> = ({ params }) => {
       winnerMessage = "It's a Tie!";
     }
     return (
-      <main className="bg-[#dbd9e3] flex min-h-screen flex-col items-center justify-center p-24">
-        <div className="bg-[#f0bf4c] rounded-lg shadow-md p-8 text-center">
+      <main className="bg-greybg flex min-h-screen flex-col items-center justify-center p-24">
+        <div className="bg-yellowbg rounded-lg shadow-md p-8 text-center">
           <h1 className="text-2xl font-bold mb-2">Quiz Completed!</h1>
           <p className="text-lg">
             Player 1 Score: {scores.player1} ed coins
@@ -270,7 +270,7 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   }
 
   if (questions.length === 0) {
-    return <div>Loading...</div>;
+    return <div className="bg-greybg h-screen flex justify-center items-center text-3xl">Loading...</div>;
   }
 
   console.log({ questions });
@@ -279,60 +279,61 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   // console.log("Player Message", playerMessage);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24 bg-white">
-      <div className="w-full max-w-md text-center">
+    <main className="flex min-h-screen flex-col items-center justify-center p-10 bg-white">
+      <div className="w-full max-w-md text-center mb-6">
         <h1 className="text-3xl font-bold mb-2">Quiz Time!</h1>
         <p className="text-lg font-bold">{playerMessage}</p>
       </div>
-      <div className="relative w-full max-w-[40rem]">
-        <div className="bg-[#f0bf4c] rounded-3xl border-2 border-gray-600 w-full h-full absolute top-0 left-0 transform rotate-6"></div>
-        <div className="bg-[#dbd9e3] rounded-3xl border-2 flex flex-col items-center justify-center border-black p-8 w-full relative z-10">
+      <div className="w-auto max-w-full">
+        <div className="bg-yellowbg rounded-3xl border-2 border-gray-600 w-full h-full -rotate-6">
+        <div className="bg-greybg rounded-3xl border-2 flex flex-col items-center justify-center border-black p-6 w-full rotate-6">
           <div className="flex justify-center mb-4">
             {questionStatus.map((status, index) => (
               <div
                 key={index}
                 className={`w-10 h-10 flex items-center justify-center rounded-full border-2 border-black mx-2 ${
                   index === currentQuestionIndex
-                    ? "bg-yellow-500"
-                    : "bg-gray-100"
+                    ? "bg-yellowbg"
+                    : "bg-greybg"
                 }`}
               >
                 {index + 1}
               </div>
             ))}
           </div>
-          <div className="relative text-center mb-8 border-2 border-black w-full bg-white p-5 rounded-2xl">
+          <div className="relative text-center mb-6 border-2 border-black w-full bg-white p-5 rounded-2xl">
             <h2 className="text-lg font-medium">{question.question}</h2>
             <div className="absolute bottom-2 right-4 w-12 h-12 rounded-full border-2 border-black flex items-center justify-center bg-red-200 translate-y-8">
               {timer}s
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4 w-full mb-4">
+          <div className="grid grid-cols-2 gap-4 w-full mb-2">
             {question.options.map((option, index) => (
               <CustomButton
                 key={index}
                 text={option}
                 className={`mb-2 cursor-pointer ${
-                  selectedAnswer === option ? "bg-yellow-200" : "bg-white"
+                  selectedAnswer === option ? "bg-yellowbg" : "bg-white"
                 }`}
                 onClick={() => handleAnswerClick(option)}
               />
             ))}
           </div>
-          <div className="flex text-lg font-medium w-full items-center justify-center mt-3 mb-10">
+          <div className="flex text-lg font-medium w-full items-center justify-center mt-3 mb-4">
             ---------------------- <PiCoins className="inline-block mx-2" /> 10
             ed coins ----------------------
           </div>
-          <div className="flex w-full justify-between mt-4">
+          <div className="flex w-full justify-between">
             <div className="w-1/2 text-left">
-              Player 1 : {scores && scores.player1} ed coins
+              {player1} : {scores && scores.player1} ed coins
               <PiCoins className="inline-block ml-2" />
             </div>
             <div className="w-1/2 text-right">
-              Player 2 : {scores && scores.player2} ed coins
+              {player2} : {scores && scores.player2} ed coins
               <PiCoins className="inline-block ml-2" />
             </div>
           </div>
+        </div>
         </div>
       </div>
     </main>
