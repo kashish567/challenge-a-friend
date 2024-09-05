@@ -245,22 +245,22 @@ const Home: React.FC<HomeProps> = ({ params }) => {
     let winnerMessage;
 
     if (scores.player1 > scores.player2) {
-      winnerMessage = "Player 1 Wins!";
+      winnerMessage = player1+" Wins!";
     } else if (scores.player2 > scores.player1) {
-      winnerMessage = "Player 2 Wins!";
+      winnerMessage = player2+" Wins!";
     } else {
       winnerMessage = "It's a Tie!";
     }
     return (
       <main className="bg-greybg flex min-h-screen flex-col items-center justify-center p-24">
-        <div className="bg-yellowbg rounded-lg shadow-md p-8 text-center">
+        <div className="bg-yellowbg rounded-3xl border-[2px] border-black p-8 text-center">
           <h1 className="text-2xl font-bold mb-2">Quiz Completed!</h1>
           <p className="text-lg">
-            Player 1 Score: {scores.player1} ed coins
+            {player1} Score: {scores.player1} ed coins
             <PiCoins className="inline-block ml-2" />
           </p>
           <p className="text-lg mb-2">
-            Player 2 Score: {scores.player2} ed coins
+            {player2} Score: {scores.player2} ed coins
             <PiCoins className="inline-block ml-2" />
           </p>
           <p className="text-lg font-bold">{winnerMessage}</p>
