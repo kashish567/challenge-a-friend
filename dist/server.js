@@ -2,7 +2,7 @@ import { createServer } from "http";
 import next from "next";
 import { Server } from "socket.io";
 import data from "../src/data.json" assert { type: "json" };
-import axios from 'axios';
+import axios from "axios";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
@@ -46,10 +46,10 @@ app.prepare().then(() => {
 
       socket.join(roomCode);
       rooms[roomCode].playerName = {
-        user1 : users[0],
-        user2 : users[1]
-      }
-      console.log("rooms[roomCode]:", rooms[roomCode])
+        user1: users[0],
+        user2: users[1],
+      };
+      console.log("rooms[roomCode]:", rooms[roomCode]);
       io.to(roomCode).emit("roomState", rooms[roomCode]);
 
       if (rooms[roomCode].playerCount === 2) {
@@ -57,22 +57,38 @@ app.prepare().then(() => {
         quizStarted = true;
         for (const name of users) {
           try {
-            const response = await axios.put(`http://localhost:3000/api/user/${name}`);
+            const response = await axios.put(
+              `http://localhost:3000/api/user/${name}`
+            );
             console.log("User updated:", response.data);
           } catch (error) {
             console.error("Error checking user existence:", error);
           }
         }
-        questions = [...data.questions]
-          .sort(() => 0.5 - Math.random())
-          .slice(0, 5);
-        io.to(roomCode).emit("startQuiz", questions);
+        // questions = [...data.questions]
+        //   .sort(() => 0.5 - Math.random())
+        //   .slice(0, 5);
+        // io.to(roomCode).emit("startQuiz", questions);
+
+        // Use the selected category to filter questions
+        const selectedCategory = rooms[roomCode].category;
+        if (selectedCategory) {
+          questions = [...data.questions]
+            .filter((q) => q.category === selectedCategory)
+            .sort(() => 0.5 - Math.random())
+            .slice(0, 5);
+          console.log("~~~~~startQuiz", questions)
+          io.to(roomCode).emit("startQuiz", questions);
+        } else {
+          console.log("No category selected for this room");
+        }
       }
     });
 
-    socket.on("createRoom", (roomCode, username) => {
+    socket.on("createRoom", (roomCode, username, selectedCategory) => {
       console.log("Create room request received");
       rooms[roomCode] = { players: [socket.id], playerCount: 1 };
+      rooms[roomCode].category = selectedCategory;
       // users[roomCode] = { username };
 
       socket.join(roomCode);
