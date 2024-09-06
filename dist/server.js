@@ -126,10 +126,23 @@ app.prepare().then(() => {
       if (rooms[roomCode].playerCount === 2) {
         console.log("Two players joined, starting quiz");
         quizStarted = true;
-        questions = [...data.questions]
-          .sort(() => 0.5 - Math.random())
-          .slice(0, 5);
-        io.to(socket.id).emit("startQuiz", questions);
+        // questions = [...data.questions]
+        //   .sort(() => 0.5 - Math.random())
+        //   .slice(0, 5);
+        // io.to(socket.id).emit("startQuiz", questions);
+
+        // Use the selected category to filter questions
+        const selectedCategory = rooms[roomCode].category;
+        if (selectedCategory) {
+          questions = [...data.questions]
+            .filter((q) => q.category === selectedCategory)
+            .sort(() => 0.5 - Math.random())
+            .slice(0, 5);
+          console.log("~~~~~startQuiz", questions)
+          io.to(roomCode).emit("startQuiz", questions);
+        } else {
+          console.log("No category selected for this room");
+        }
       }
     });
 
