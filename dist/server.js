@@ -87,7 +87,7 @@ app.prepare().then(() => {
       }
     });
 
-    socket.on("createRoom", (roomCode, username, selectedCategory) => {
+    socket.on("createRoom", async (roomCode, username, selectedCategory) => {
       console.log("Create room request received");
       rooms[roomCode] = { players: [socket.id], playerCount: 1 };
       rooms[roomCode].category = selectedCategory;
@@ -95,6 +95,23 @@ app.prepare().then(() => {
 
       socket.join(roomCode);
       console.log({ rooms });
+      try {
+        const response = await axios.post(`http://localhost:3000/api/room`, {
+          roomCode: roomCode,
+          roomCreatedBy: username,
+          player1Name: users[0],
+          player2Name: users[1],
+          playerCount: rooms[roomCode].playerCount,
+          playerIds: rooms[roomCode].players,
+          category: rooms[roomCode].category,
+          winner: null,
+        });
+        if(response.data.success){
+          console.log("Room created successfully:", response.data);
+        }
+      } catch (error) {
+        console.log(error)
+      }
 
       io.emit(
         "roomList",
