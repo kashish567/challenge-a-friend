@@ -1,21 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import Challenge from "@/schema/userSchema"; 
+import Challenge from "@/schema/userSchema";
 import dbConnect from "@/db/db";
 
-export const PUT = async (req: NextRequest, { params }: { params: { username: string } }) => {
+export const PUT = async (
+  req: NextRequest,
+  { params }: { params: { username: string } }
+) => {
   try {
     await dbConnect();
 
     const { username } = params;
+    const body = await req.json();
+    const { entryCost, winnerPrize } = body;
 
     if (!username) {
-      return NextResponse.json({ error: "Username is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Username is required" },
+        { status: 400 }
+      );
     }
 
     const user = await Challenge.findOne({ username });
 
     if (!user) {
-      return NextResponse.json({ error: "User does not exist", user: false }, { status: 404 });
+      return NextResponse.json(
+        { error: "User does not exist", user: false },
+        { status: 404 }
+      );
     }
 
     // Check if the last update (based on updatedAt) was within 1 minute
@@ -24,15 +35,27 @@ export const PUT = async (req: NextRequest, { params }: { params: { username: st
     const lastUpdated = user.updatedAt ? new Date(user.updatedAt).getTime() : 0;
 
     if (now - lastUpdated < oneMinute) {
-      return NextResponse.json({ error: "You can only update once per minute" }, { status: 429 });
+      return NextResponse.json(
+        { error: "You can only update once per minute" },
+        { status: 429 }
+      );
     }
 
-    // Proceed with updating edcoins and set updatedAt automatically
-    user.edcoins -= 100;
-    await user.save(); // This will also update the updatedAt field automatically
+    if (entryCost) {
+      // Proceed with updating edcoins and set updatedAt automatically
+      user.edcoins -= 100;
+    }
 
-    return NextResponse.json({ success: true, user: true, edcoins: user.edcoins }, { status: 200 });
+    if (winnerPrize) {
+      user.edcoins += 200;
+    }
 
+    await user.save();
+
+    return NextResponse.json(
+      { success: true, user: true, edcoins: user.edcoins },
+      { status: 200 }
+    );
   } catch (error: any) {
     console.error(`Error: ${error.message}`);
     return NextResponse.json({ error: error.message }, { status: 500 });

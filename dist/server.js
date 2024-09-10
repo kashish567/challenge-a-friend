@@ -58,7 +58,8 @@ app.prepare().then(() => {
         for (const name of users) {
           try {
             const response = await axios.put(
-              `http://localhost:3000/api/user/${name}`
+              `http://localhost:3000/api/user/${name}`,
+              { entryCost: true, winnerPrize: false }
             );
             console.log("User updated:", response.data);
           } catch (error) {
@@ -77,7 +78,7 @@ app.prepare().then(() => {
             .filter((q) => q.category === selectedCategory)
             .sort(() => 0.5 - Math.random())
             .slice(0, 5);
-          console.log("~~~~~startQuiz", questions)
+          console.log("~~~~~startQuiz", questions);
           io.to(roomCode).emit("startQuiz", questions);
         } else {
           console.log("No category selected for this room");
@@ -138,7 +139,7 @@ app.prepare().then(() => {
             .filter((q) => q.category === selectedCategory)
             .sort(() => 0.5 - Math.random())
             .slice(0, 5);
-          console.log("~~~~~startQuiz", questions)
+          console.log("~~~~~startQuiz", questions);
           io.to(roomCode).emit("startQuiz", questions);
         } else {
           console.log("No category selected for this room");
