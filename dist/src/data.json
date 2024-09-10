@@ -97,7 +97,7 @@
       },
       {
         "question": "Which movie won the National Film Award for Best Feature Film in 2020?",
-        "options": ["Gully Boy", "Article 15", "Asuran", "Jallikattu"],
+        "options": ["Gully Boy", "Article 15", "Asuran", "Marakkar: Lion of the Arabian Sea"],
         "correctAnswer": "Marakkar: Lion of the Arabian Sea",
         "category": "bollywood"
       },
