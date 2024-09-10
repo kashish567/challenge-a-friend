@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { io, Socket } from "socket.io-client";
 import CustomButton from "@/components/CustomButton";
 import { PiCoins } from "react-icons/pi";
+import axios from "axios";
 
 let socket: Socket;
 
@@ -37,8 +38,8 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   const [scores, setScores] = useState<{ [key: string]: number }>();
   const [waitingForOpponent, setWaitingForOpponent] = useState<boolean>(false);
   const [isPlayer1, setIsPlayer1] = useState<boolean>(false);
-  const [player1 , setPlayer1] = useState("");
-  const [player2 , setPlayer2] = useState("");
+  const [player1, setPlayer1] = useState("");
+  const [player2, setPlayer2] = useState("");
 
   useEffect(() => {
     socket = io("http://localhost:3000");
@@ -61,8 +62,8 @@ const Home: React.FC<HomeProps> = ({ params }) => {
         setWaitingForOpponent(true);
       } else {
         setWaitingForOpponent(false);
-        setPlayer1(roomState.playerName.user1)
-        setPlayer2(roomState.playerName.user2)
+        setPlayer1(roomState.playerName?.user1 || "Player2");
+        setPlayer2(roomState.playerName?.user2 || "Player2");
       }
     });
 
@@ -91,7 +92,10 @@ const Home: React.FC<HomeProps> = ({ params }) => {
     });
 
     return () => {
-      socket.disconnect();
+      // Clean up socket connection on unmount
+      if (socket) {
+        socket.disconnect();
+      }
     };
   }, []);
 
@@ -166,12 +170,47 @@ const Home: React.FC<HomeProps> = ({ params }) => {
     setWaitingForOpponent(false);
   };
 
+  useEffect(() => {
+    if (scores && showResult) {
+      let winnerMessage;
+
+      if (scores.player1 > scores.player2) {
+        winnerMessage = `${player1} Wins!`;
+        updateEdcoins(player1); // Update coins for the winner
+      } else if (scores.player2 > scores.player1) {
+        winnerMessage = `${player2} Wins!`;
+        updateEdcoins(player2); // Update coins for the winner
+      } else {
+        winnerMessage = "It's a Tie!";
+      }
+      console.log("Final Results:", winnerMessage);
+    }
+  }, [scores, player1, player2]);
+
+  const updateEdcoins = async (playerName: string) => {
+    try {
+      const response = await axios.put(
+        `http://localhost:3000/api/user`,
+        {
+          username1: player1,
+          username2: player2,
+          entryCost: false,
+          winnerUsername: playerName,
+          winnerPrize: true,
+        }
+      );
+      console.log(`User updated for ${playerName}: ${response.data}`);
+    } catch (error) {
+      console.error(`Error updating user for ${playerName}: ${error}`);
+    }
+  };
+
   const handleAnswerClick = (answer: string) => {
     console.log("handleAnswerClick");
     setSelectedAnswer(answer);
     const correct = answer === questions[currentQuestionIndex].correctAnswer;
     if (correct) {
-      const newScore = score + 10;
+      const newScore = score + 1;
       setScore(newScore);
       socket.emit(
         "updateScore",
@@ -212,7 +251,11 @@ const Home: React.FC<HomeProps> = ({ params }) => {
 
   console.log({ quizStarted });
   if (!quizStarted) {
-    return <div className="bg-greybg h-screen flex justify-center items-center text-3xl">Waiting for another player to join...</div>;
+    return (
+      <div className="bg-greybg h-screen flex justify-center items-center text-3xl">
+        Waiting for another player to join...
+      </div>
+    );
   }
 
   console.log({ waitingForOpponent });
@@ -245,9 +288,9 @@ const Home: React.FC<HomeProps> = ({ params }) => {
     let winnerMessage;
 
     if (scores.player1 > scores.player2) {
-      winnerMessage = player1+" Wins!";
+      winnerMessage = player1 + " Wins!";
     } else if (scores.player2 > scores.player1) {
-      winnerMessage = player2+" Wins!";
+      winnerMessage = player2 + " Wins!";
     } else {
       winnerMessage = "It's a Tie!";
     }
@@ -256,21 +299,26 @@ const Home: React.FC<HomeProps> = ({ params }) => {
         <div className="bg-yellowbg rounded-3xl border-[2px] border-black p-8 text-center">
           <h1 className="text-2xl font-bold mb-2">Quiz Completed!</h1>
           <p className="text-lg">
-            {player1} Score: {scores.player1} ed coins
+            {player1} Score: {scores.player1 ? scores.player1: 0} correct answers
             <PiCoins className="inline-block ml-2" />
           </p>
           <p className="text-lg mb-2">
-            {player2} Score: {scores.player2} ed coins
+            {player2} Score: {scores.player2 ? scores.player2: 0} correct answers
             <PiCoins className="inline-block ml-2" />
           </p>
           <p className="text-lg font-bold">{winnerMessage}</p>
+          <p className="text-lg font-bold">+ 200 edcoins</p>
         </div>
       </main>
     );
   }
 
   if (questions.length === 0) {
-    return <div className="bg-greybg h-screen flex justify-center items-center text-3xl">Loading...</div>;
+    return (
+      <div className="bg-greybg h-screen flex justify-center items-center text-3xl">
+        Loading...
+      </div>
+    );
   }
 
   console.log({ questions });
@@ -286,54 +334,52 @@ const Home: React.FC<HomeProps> = ({ params }) => {
       </div>
       <div className="w-auto max-w-full">
         <div className="bg-yellowbg rounded-3xl border-2 border-gray-600 w-full h-full -rotate-6">
-        <div className="bg-greybg rounded-3xl border-2 flex flex-col items-center justify-center border-black p-6 w-full rotate-6">
-          <div className="flex justify-center mb-4">
-            {questionStatus.map((status, index) => (
-              <div
-                key={index}
-                className={`w-10 h-10 flex items-center justify-center rounded-full border-2 border-black mx-2 ${
-                  index === currentQuestionIndex
-                    ? "bg-yellowbg"
-                    : "bg-greybg"
-                }`}
-              >
-                {index + 1}
+          <div className="bg-greybg rounded-3xl border-2 flex flex-col items-center justify-center border-black p-6 w-full rotate-6">
+            <div className="flex justify-center mb-4">
+              {questionStatus.map((status, index) => (
+                <div
+                  key={index}
+                  className={`w-10 h-10 flex items-center justify-center rounded-full border-2 border-black mx-2 ${
+                    index === currentQuestionIndex ? "bg-yellowbg" : "bg-greybg"
+                  }`}
+                >
+                  {index + 1}
+                </div>
+              ))}
+            </div>
+            <div className="relative text-center mb-6 border-2 border-black w-full bg-white p-5 rounded-2xl">
+              <h2 className="text-lg font-medium">{question.question}</h2>
+              <div className="absolute bottom-2 right-4 w-12 h-12 rounded-full border-2 border-black flex items-center justify-center bg-red-200 translate-y-8">
+                {timer}s
               </div>
-            ))}
-          </div>
-          <div className="relative text-center mb-6 border-2 border-black w-full bg-white p-5 rounded-2xl">
-            <h2 className="text-lg font-medium">{question.question}</h2>
-            <div className="absolute bottom-2 right-4 w-12 h-12 rounded-full border-2 border-black flex items-center justify-center bg-red-200 translate-y-8">
-              {timer}s
+            </div>
+            <div className="grid grid-cols-2 gap-4 w-full mb-2">
+              {question.options.map((option, index) => (
+                <CustomButton
+                  key={index}
+                  text={option}
+                  className={`mb-2 cursor-pointer ${
+                    selectedAnswer === option ? "bg-yellowbg" : "bg-white"
+                  }`}
+                  onClick={() => handleAnswerClick(option)}
+                />
+              ))}
+            </div>
+            {/* <div className="flex text-lg font-medium w-full items-center justify-center mt-3 mb-4">
+              ---------------------- <PiCoins className="inline-block mx-2" />{" "}
+              10 ed coins ----------------------
+            </div> */}
+            <div className="flex w-full justify-between">
+              <div className="w-1/2 text-left">
+                {player1} : {scores ? scores.player1 : 0} correct answers
+                {/* <PiCoins className="inline-block ml-2" /> */}
+              </div>
+              <div className="w-1/2 text-right">
+                {player2} : {scores ? scores.player2 : 0} correct answers
+                {/* <PiCoins className="inline-block ml-2" /> */}
+              </div>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4 w-full mb-2">
-            {question.options.map((option, index) => (
-              <CustomButton
-                key={index}
-                text={option}
-                className={`mb-2 cursor-pointer ${
-                  selectedAnswer === option ? "bg-yellowbg" : "bg-white"
-                }`}
-                onClick={() => handleAnswerClick(option)}
-              />
-            ))}
-          </div>
-          <div className="flex text-lg font-medium w-full items-center justify-center mt-3 mb-4">
-            ---------------------- <PiCoins className="inline-block mx-2" /> 10
-            ed coins ----------------------
-          </div>
-          <div className="flex w-full justify-between">
-            <div className="w-1/2 text-left">
-              {player1} : {scores && scores.player1} ed coins
-              <PiCoins className="inline-block ml-2" />
-            </div>
-            <div className="w-1/2 text-right">
-              {player2} : {scores && scores.player2} ed coins
-              <PiCoins className="inline-block ml-2" />
-            </div>
-          </div>
-        </div>
         </div>
       </div>
     </main>

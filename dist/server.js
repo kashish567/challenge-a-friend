@@ -55,16 +55,17 @@ app.prepare().then(() => {
       if (rooms[roomCode].playerCount === 2) {
         console.log("Two players joined, starting quiz");
         quizStarted = true;
-        for (const name of users) {
-          try {
-            const response = await axios.put(
-              `http://localhost:3000/api/user/${name}`,
-              { entryCost: true, winnerPrize: false }
-            );
-            console.log("User updated:", response.data);
-          } catch (error) {
-            console.error("Error checking user existence:", error);
-          }
+        try {
+          const response = await axios.put(`http://localhost:3000/api/user`, {
+            username1: users[0],
+            username2: users[1],
+            entryCost: true,
+            winnerUsername: "",
+            winnerPrize: false,
+          });
+          console.log("User updated:", response.data);
+        } catch (error) {
+          console.error("Error checking user existence:", error);
         }
         // questions = [...data.questions]
         //   .sort(() => 0.5 - Math.random())
