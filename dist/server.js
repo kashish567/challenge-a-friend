@@ -37,7 +37,7 @@ app.prepare().then(() => {
     socket.on("userJoinedQuizRoom", async (roomCode, username) => {
       console.log("user joined quiz room", roomCode, username);
       users.push(username);
-      console.log("users array", users);
+      // console.log("users array", users);
       //ch
       if (!rooms[roomCode]) {
         console.log(`Room ${roomCode} does not exist`);
@@ -49,8 +49,8 @@ app.prepare().then(() => {
         user1: users[0],
         user2: users[1],
       };
-      console.log("rooms[roomCode]:", rooms[roomCode]);
-      io.to(roomCode).emit("roomState", rooms[roomCode]);
+      // console.log("rooms[roomCode]:", rooms[roomCode]);
+      io.to(roomCode).emit("roomState", rooms[roomCode], roomCode);
 
       if (rooms[roomCode].playerCount === 2) {
         console.log("Two players joined, starting quiz");
@@ -66,6 +66,23 @@ app.prepare().then(() => {
           console.log("User updated:", response.data);
         } catch (error) {
           console.error("Error checking user existence:", error);
+        }
+        try {
+          const response = await axios.post(`http://localhost:3000/api/room`, {
+            roomCode: roomCode,
+            roomCreatedBy: username,
+            player1Name: users[0],
+            player2Name: users[1],
+            playerCount: rooms[roomCode].playerCount,
+            playerIds: rooms[roomCode].players,
+            category: rooms[roomCode].category,
+            winner: null,
+          });
+          if(response.data.success){
+            console.log("Room created successfully:", response.data);
+          }
+        } catch (error) {
+          console.log("posting room data error:",error)
         }
         // questions = [...data.questions]
         //   .sort(() => 0.5 - Math.random())
@@ -95,23 +112,6 @@ app.prepare().then(() => {
 
       socket.join(roomCode);
       console.log({ rooms });
-      try {
-        const response = await axios.post(`http://localhost:3000/api/room`, {
-          roomCode: roomCode,
-          roomCreatedBy: username,
-          player1Name: users[0],
-          player2Name: users[1],
-          playerCount: rooms[roomCode].playerCount,
-          playerIds: rooms[roomCode].players,
-          category: rooms[roomCode].category,
-          winner: null,
-        });
-        if(response.data.success){
-          console.log("Room created successfully:", response.data);
-        }
-      } catch (error) {
-        console.log(error)
-      }
 
       io.emit(
         "roomList",
@@ -137,6 +137,9 @@ app.prepare().then(() => {
 
       // users[socket.id] = { room: roomCode, username };
       socket.join(roomCode);
+      // console.log("~~~***roomcode,playersid, playerCount, category, PlayerNAmes object")
+      // console.log(rooms)
+      
 
       // Emit room state to all clients in the room
       // io.to(roomCode).emit("roomState", rooms[roomCode]);
@@ -157,7 +160,7 @@ app.prepare().then(() => {
             .filter((q) => q.category === selectedCategory)
             .sort(() => 0.5 - Math.random())
             .slice(0, 5);
-          console.log("~~~~~startQuiz", questions);
+          // console.log("~~~~~startQuiz", questions);
           io.to(roomCode).emit("startQuiz", questions);
         } else {
           console.log("No category selected for this room");
@@ -167,7 +170,7 @@ app.prepare().then(() => {
 
     socket.on("getRooms", () => {
       console.log("Get rooms request received");
-      console.log({ rooms });
+      // console.log({ rooms });
       socket.emit(
         "roomList",
         Object.keys(rooms).map((code) => ({

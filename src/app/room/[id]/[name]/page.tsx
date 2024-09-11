@@ -40,6 +40,8 @@ const Home: React.FC<HomeProps> = ({ params }) => {
   const [isPlayer1, setIsPlayer1] = useState<boolean>(false);
   const [player1, setPlayer1] = useState("");
   const [player2, setPlayer2] = useState("");
+  const [room, setRoom] = useState();
+  const [roomCodeState, setRoomCodeState] = useState();
 
   useEffect(() => {
     socket = io("http://localhost:3000");
@@ -54,8 +56,10 @@ const Home: React.FC<HomeProps> = ({ params }) => {
       }
     });
 
-    socket.on("roomState", (roomState) => {
+    socket.on("roomState", (roomState, roomCode) => {
       console.log("roomState", roomState);
+      setRoom(roomState);
+      setRoomCodeState(roomCode);
       console.log("count", roomState.playerCount);
       if (roomState.playerCount < 2) {
         setIsPlayer1(true);
@@ -199,7 +203,14 @@ const Home: React.FC<HomeProps> = ({ params }) => {
           winnerPrize: true,
         }
       );
+      const responseRoom = await axios.put(`http://localhost:3000/api/room`, {
+        roomCode: roomCodeState,
+        winner: playerName,
+      });
       console.log(`User updated for ${playerName}: ${response.data}`);
+      if(response.data.success){
+        console.log("Room updated with winner successfully:", responseRoom.data);
+      }
     } catch (error) {
       console.error(`Error updating user for ${playerName}: ${error}`);
     }
