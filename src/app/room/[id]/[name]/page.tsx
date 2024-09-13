@@ -343,7 +343,7 @@ const Home: React.FC<HomeProps> = ({ params }) => {
         <h1 className="text-3xl font-bold mb-2">Quiz Time!</h1>
         <p className="text-lg font-bold">{playerMessage}</p>
       </div>
-      <div className="w-auto max-w-full">
+      <div className="w-1/2 max-w-full">
         <div className="bg-yellowbg rounded-3xl border-2 border-gray-600 w-full h-full -rotate-6">
           <div className="bg-greybg rounded-3xl border-2 flex flex-col items-center justify-center border-black p-6 w-full rotate-6">
             <div className="flex justify-center mb-4">
