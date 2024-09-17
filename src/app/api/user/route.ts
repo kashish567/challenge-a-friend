@@ -61,9 +61,6 @@ export const PUT = async (req: NextRequest) => {
     const user2 = username2
       ? await Challenge.findOne({ username: username2 })
       : null;
-    const winner = winnerUsername
-      ? await Challenge.findOne({ username: winnerUsername })
-      : null;
 
     if (!user1 && !user2) {
       return NextResponse.json(
@@ -97,9 +94,13 @@ export const PUT = async (req: NextRequest) => {
       await user2.save();
     }
 
-    if (winnerPrize) {
-      winner.edcoins += 200;
-      await winner.save();
+    if (winnerPrize && username1 == winnerUsername) {
+      user1.edcoins += 200;
+      await user1.save();
+    }
+    if (winnerPrize && username2 == winnerUsername) {
+      user2.edcoins += 200;
+      await user2.save();
     }
 
     return NextResponse.json(
@@ -108,7 +109,7 @@ export const PUT = async (req: NextRequest) => {
         user: true,
         user1edcoins: user1.edcoins,
         user2edcoins: user2.edcoins,
-        winnerEdcoins: winner.edcoins
+        // winnerEdcoins: winner.edcoins
       },
       { status: 200 }
     );
