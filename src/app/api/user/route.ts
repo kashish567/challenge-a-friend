@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import Challenge from "@/schema/userSchema"; // Fixed typo in import
 import dbConnect from "@/db/db";
+import Room from "@/schema/roomSchema";
 
 export const POST = async (req: NextRequest) => {
   try {
     // Connect to the database
     await dbConnect();
+
+    let roomCode: number | null = null;
+    let isUnique = false;
 
     // Parse the request body
     const body = await req.json();
@@ -29,9 +33,14 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
+    while (!isUnique) {
+      roomCode = generateNumericRoomCode(); // Generate room code
+      isUnique = await isRoomCodeUnique(roomCode); // Ensure it's unique
+    }
+
     // Respond with success and return the user's edcoins
     return NextResponse.json(
-      { success: true, user: true, edcoins: user.edcoins || 0 },
+      { success: true, user: true, edcoins: user.edcoins || 0, roomCode: roomCode },
       { status: 200 }
     );
   } catch (error: any) {
@@ -39,6 +48,15 @@ export const POST = async (req: NextRequest) => {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 };
+
+function generateNumericRoomCode(): number {
+  return Math.floor(100000 + Math.random() * 900000); // Generate a 6-digit room code
+}
+
+async function isRoomCodeUnique(roomCode: number): Promise<boolean> {
+  const room = await Room.findOne({ roomCode });
+  return !room; // Return true if no room exists with the code
+}
 
 export const PUT = async (req: NextRequest) => {
   try {

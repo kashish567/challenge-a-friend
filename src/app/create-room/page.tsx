@@ -47,7 +47,8 @@ const CreateRoom = () => {
       // Check if the response indicates success and user existence
       if (response.data.success && response.data.user) {
         setEdcoins(response.data.edcoins); // Set edcoins state
-        return true;
+        setRoomCode(response.data.roomCode);
+        return response.data.roomCode;
       }
     } catch (error: any) {
       if (error.response && error.response.status === 404) {
@@ -61,13 +62,14 @@ const CreateRoom = () => {
 
   const createRoomLink = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("roomCode", roomCode, "username", username, "edcoins", edcoins);
+    console.log("username", username, "edcoins", edcoins);
     console.log("selcted category", selectedCategory)
 
-    const userExists = await checkUserExists(username);
+    const generatedRoomCode = await checkUserExists(username);
+    console.log("generatedRoomCode:",generatedRoomCode)
 
     // Prevent room creation if the user does not exist or edcoins are not sufficient
-    if (!userExists) {
+    if (!generatedRoomCode) {
       setErrorMessage("Username not registered. Please register first.");
       return;
     }
@@ -77,8 +79,8 @@ const CreateRoom = () => {
     //   return;
     // }
 
-    socket.emit("createRoom", roomCode, username, selectedCategory);
-    setRoomLink(`http://localhost:3000/room/${roomCode}/`);
+    socket.emit("createRoom", generatedRoomCode, username, selectedCategory);
+    setRoomLink(`http://localhost:3000/room/${generatedRoomCode}/`);
     setErrorMessage(""); // Clear any previous error messages
   };
 
