@@ -106,6 +106,7 @@ const CreateRoom = () => {
               name="roomcode"
               className="mb-2 rounded-full h-8 p-2"
               value={roomCode}
+              readOnly
               onChange={(e) => setRoomCode(e.target?.value)}
             />
 
