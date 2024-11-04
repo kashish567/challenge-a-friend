@@ -1,5 +1,5 @@
-{
-  "questions": [
+ const questionnaire = {
+  questions: [
     {
       "question": "Who played the role of Vijay in the movie 'Sholay'?",
       "options": [
@@ -604,3 +604,4 @@
     }
   ]
 }
+export default questionnaire;

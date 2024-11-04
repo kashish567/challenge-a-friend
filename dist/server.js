@@ -1,7 +1,7 @@
 import { createServer } from "http";
 import next from "next";
 import { Server } from "socket.io";
-import data from "../src/data.json" assert { type: "json" };
+import questionnaire from "../src/data.js"
 import axios from "axios";
 
 const dev = process.env.NODE_ENV !== "production";
@@ -92,7 +92,7 @@ app.prepare().then(() => {
         // Use the selected category to filter questions
         const selectedCategory = rooms[roomCode].category;
         if (selectedCategory) {
-          questions = [...data.questions]
+          questions = [...questionnaire.questions]
             .filter((q) => q.category === selectedCategory)
             .sort(() => 0.5 - Math.random())
             .slice(0, 5);
@@ -156,7 +156,7 @@ app.prepare().then(() => {
         // Use the selected category to filter questions
         const selectedCategory = rooms[roomCode].category;
         if (selectedCategory) {
-          questions = [...data.questions]
+          questions = [...questionnaire.questions]
             .filter((q) => q.category === selectedCategory)
             .sort(() => 0.5 - Math.random())
             .slice(0, 5);
